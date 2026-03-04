@@ -1,0 +1,28 @@
+{
+  "placeholderImages": [
+    {
+      "id": "hero-medical",
+      "description": "Fachada de Hospital Moderno",
+      "imageUrl": "https://picsum.photos/seed/hosp-cr-hero/1200/600",
+      "imageHint": "modern hospital"
+    },
+    {
+      "id": "mission-image",
+      "description": "Atención médica profesional",
+      "imageUrl": "https://picsum.photos/seed/med-mission/600/400",
+      "imageHint": "doctor hospital"
+    },
+    {
+      "id": "vision-image",
+      "description": "Tecnología médica avanzada",
+      "imageUrl": "https://picsum.photos/seed/med-tech/600/400",
+      "imageHint": "medical technology"
+    },
+    {
+      "id": "clinic-location",
+      "description": "Sede de salud local",
+      "imageUrl": "https://picsum.photos/seed/clinic-ext/800/400",
+      "imageHint": "clinic building"
+    }
+  ]
+}

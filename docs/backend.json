@@ -1,0 +1,77 @@
+
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Representa la información personal y detalles de cuenta de un usuario registrado.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phoneNumber": { "type": "string" },
+        "address": { "type": "string" },
+        "province": { "type": "string", "enum": ["San José", "Alajuela", "Cartago", "Heredia", "Guanacaste", "Puntarenas", "Limón"] },
+        "canton": { "type": "string" },
+        "bloodType": { "type": "string" },
+        "allergies": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "username", "email", "createdAt"]
+    },
+    "HealthCenter": {
+      "title": "HealthCenter",
+      "description": "Representa un centro de salud o sede médica en Costa Rica.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["Hospital Nacional", "EBAIS", "Clínica Especializada"] },
+        "province": { "type": "string" },
+        "address": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" }
+      },
+      "required": ["id", "name", "type", "province", "address"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "Representa una cita médica agendada.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "healthCenterId": { "type": "string" },
+        "healthCenterName": { "type": "string" },
+        "specialty": { "type": "string" },
+        "doctorName": { "type": "string" },
+        "appointmentDateTime": { "type": "string", "format": "date-time" },
+        "status": { "type": "string" },
+        "voucherCode": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "healthCenterId", "specialty", "appointmentDateTime", "status", "createdAt"]
+    }
+  },
+  "auth": {
+    "providers": ["password"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/backend/entities/UserProfile" },
+      "description": "Almacena el perfil personal del usuario."
+    },
+    "/healthCenters/{healthCenterId}": {
+      "schema": { "$ref": "#/backend/entities/HealthCenter" },
+      "description": "Catálogo de sedes médicas en Costa Rica."
+    },
+    "/users/{userId}/appointments/{appointmentId}": {
+      "schema": { "$ref": "#/backend/entities/Appointment" },
+      "description": "Citas médicas y comprobantes del usuario."
+    }
+  }
+}

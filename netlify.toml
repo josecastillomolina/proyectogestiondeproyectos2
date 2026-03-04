@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NEXT_USE_NETLIFY_EDGE = "false"
+  NODE_OPTIONS = "--max-old-space-size=4096"
+  # Desactiva la telemetría para un build más limpio
+  NEXT_TELEMETRY_DISABLED = "1"
