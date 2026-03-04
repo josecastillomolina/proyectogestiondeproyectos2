@@ -11,6 +11,8 @@
         "firstName": { "type": "string" },
         "lastName": { "type": "string" },
         "email": { "type": "string", "format": "email" },
+        "identificationType": { "type": "string", "enum": ["Nacional", "Extranjero"] },
+        "idNumber": { "type": "string", "description": "Número de cédula o identificación única." },
         "phoneNumber": { "type": "string" },
         "address": { "type": "string" },
         "province": { "type": "string", "enum": ["San José", "Alajuela", "Cartago", "Heredia", "Guanacaste", "Puntarenas", "Limón"] },
@@ -20,7 +22,7 @@
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "username", "email", "createdAt"]
+      "required": ["id", "username", "email", "idNumber", "identificationType", "createdAt"]
     },
     "HealthCenter": {
       "title": "HealthCenter",
@@ -64,6 +66,10 @@
     "/users/{userId}": {
       "schema": { "$ref": "#/backend/entities/UserProfile" },
       "description": "Almacena el perfil personal del usuario."
+    },
+    "/identifications/{idNumber}": {
+      "schema": { "type": "object", "properties": { "userId": { "type": "string" } } },
+      "description": "Mapa para garantizar la unicidad de los números de cédula."
     },
     "/healthCenters/{healthCenterId}": {
       "schema": { "$ref": "#/backend/entities/HealthCenter" },

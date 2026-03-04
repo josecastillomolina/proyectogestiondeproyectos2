@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { 
   User, Activity, ShieldAlert, Calendar, Ticket, MapPin, 
   Hospital, Loader2, LogOut, Printer, Clock, Stethoscope, 
-  Trash2, Edit3, Save, Phone, Info, CheckCircle2, ChevronRight, AlertTriangle
+  Trash2, Edit3, Save, Phone, Info, CheckCircle2, ChevronRight, AlertTriangle, CreditCard
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, useAuth } from '@/firebase';
@@ -91,6 +91,7 @@ export default function Profile() {
   }, [profile]);
 
   const handleSignOut = async () => {
+    if (!auth) return;
     await signOut(auth);
     router.push('/');
   };
@@ -115,7 +116,7 @@ export default function Profile() {
   };
 
   const handleDeleteAppointment = (appId: string) => {
-    if (!user) return;
+    if (!user || !db) return;
     const appDocRef = doc(db, 'users', user.uid, 'appointments', appId);
     deleteDocumentNonBlocking(appDocRef);
     toast({
@@ -156,6 +157,13 @@ export default function Profile() {
               </CardHeader>
               <CardContent className="p-6 space-y-6">
                 <div className="space-y-4">
+                   <div className="space-y-1">
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Identificación</p>
+                      <p className="text-sm font-bold flex items-center gap-2">
+                        <CreditCard className="h-3 w-3 text-primary" />
+                        {profile?.idNumber} ({profile?.identificationType})
+                      </p>
+                   </div>
                    <div className="space-y-1">
                       <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Email</p>
                       <p className="text-sm text-foreground font-medium truncate">{profile?.email}</p>
@@ -272,8 +280,8 @@ export default function Profile() {
                       <div className="flex items-center gap-6 bg-primary/5 p-6 rounded-3xl border border-primary/10 flex-grow mr-4">
                         <Activity className="h-12 w-12 text-primary" />
                         <div>
-                            <h3 className="font-bold text-xl">Expediente Médico</h3>
-                            <p className="text-sm text-muted-foreground">Información vital sincronizada con la red nacional.</p>
+                            <h3 className="font-bold text-xl">Expediente Médico Nacional</h3>
+                            <p className="text-sm text-muted-foreground">Información vital vinculada a su identificación única.</p>
                         </div>
                       </div>
                       <Button variant="outline" className="rounded-full" onClick={() => setIsEditingProfile(true)}>
