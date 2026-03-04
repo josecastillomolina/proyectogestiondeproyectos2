@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Proyectos</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f0f2f5;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      opacity: 0.9;
+      font-size: 1.1rem;
+    }
+
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .card h2 {
+      color: #667eea;
+      margin-bottom: 1rem;
+      font-size: 1.3rem;
+    }
+
+    .project-list {
+      list-style: none;
+    }
+
+    .project-list li {
+      padding: 0.75rem 1rem;
+      border-left: 4px solid #667eea;
+      margin-bottom: 0.5rem;
+      background: #f8f9ff;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .project-list li strong {
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .project-list li span {
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .stat-box {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-box .number {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #667eea;
+    }
+
+    .stat-box .label {
+      color: #666;
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: #999;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gestión de Proyectos</h1>
+    <p>Panel de control para seguimiento de proyectos</p>
+  </header>
+
+  <main>
+    <div class="stats">
+      <div class="stat-box">
+        <div class="number">3</div>
+        <div class="label">Proyectos activos</div>
+      </div>
+      <div class="stat-box">
+        <div class="number">12</div>
+        <div class="label">Tareas pendientes</div>
+      </div>
+      <div class="stat-box">
+        <div class="number">85%</div>
+        <div class="label">Progreso general</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Proyectos</h2>
+      <ul class="project-list">
+        <li>
+          <strong>Rediseño del sitio web</strong>
+          <span>Estado: En progreso &bull; Avance: 70%</span>
+        </li>
+        <li>
+          <strong>Aplicación móvil</strong>
+          <span>Estado: En progreso &bull; Avance: 45%</span>
+        </li>
+        <li>
+          <strong>Migración de base de datos</strong>
+          <span>Estado: Planificación &bull; Avance: 10%</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Acerca de</h2>
+      <p>Esta es una página web de gestión de proyectos. Aquí podrás hacer seguimiento del estado y progreso de tus proyectos.</p>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Gestión de Proyectos</p>
+  </footer>
+</body>
+</html>
