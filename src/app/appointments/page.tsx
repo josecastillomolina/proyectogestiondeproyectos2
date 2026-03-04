@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
@@ -16,17 +17,51 @@ import { useToast } from '@/hooks/use-toast';
 const PROVINCES = ["San José", "Alajuela", "Cartago", "Heredia", "Guanacaste", "Puntarenas", "Limón"];
 const SPECIALTIES = ["Medicina General", "Pediatría", "Ginecología", "Odontología", "Psicología", "Nutrición"];
 
-const REASONS = [
-  { label: "Dolor de pecho / Emergencia potencial", severity: "high" },
-  { label: "Dificultad severa para respirar", severity: "high" },
-  { label: "Traumatismo o herida profunda", severity: "high" },
-  { label: "Pérdida de conocimiento o mareo severo", severity: "high" },
-  { label: "Fiebre persistente o Malestar general", severity: "standard" },
-  { label: "Tos leve o resfriado", severity: "standard" },
-  { label: "Control médico de rutina / Chequeo", severity: "standard" },
-  { label: "Dolor muscular o articular leve", severity: "standard" },
-  { label: "Renovación de recetas médicas", severity: "standard" },
-];
+const REASONS_BY_SPECIALTY: Record<string, { label: string, severity: 'high' | 'standard' }[]> = {
+  "Medicina General": [
+    { label: "Dolor de pecho / Emergencia potencial", severity: "high" },
+    { label: "Dificultad severa para respirar", severity: "high" },
+    { label: "Fiebre persistente o Malestar general", severity: "standard" },
+    { label: "Tos leve o resfriado", severity: "standard" },
+    { label: "Control médico de rutina / Chequeo", severity: "standard" },
+    { label: "Renovación de recetas médicas", severity: "standard" },
+  ],
+  "Pediatría": [
+    { label: "Fiebre alta en lactante", severity: "high" },
+    { label: "Dificultad respiratoria (Pediatría)", severity: "high" },
+    { label: "Control de crecimiento y desarrollo", severity: "standard" },
+    { label: "Vacunación esquemas nacionales", severity: "standard" },
+    { label: "Infección de oído o garganta", severity: "standard" },
+  ],
+  "Ginecología": [
+    { label: "Dolor abdominal agudo / Hemorragia", severity: "high" },
+    { label: "Control prenatal de alto riesgo", severity: "high" },
+    { label: "Citología (Papanicolau) de rutina", severity: "standard" },
+    { label: "Control prenatal mensual", severity: "standard" },
+    { label: "Planificación familiar", severity: "standard" },
+  ],
+  "Odontología": [
+    { label: "Absceso dental con inflamación facial", severity: "high" },
+    { label: "Dolor de muela severo e insoportable", severity: "high" },
+    { label: "Limpieza y profilaxis", severity: "standard" },
+    { label: "Extracción programada", severity: "standard" },
+    { label: "Calza o restauración dental", severity: "standard" },
+  ],
+  "Psicología": [
+    { label: "Crisis de pánico / Ideación severa", severity: "high" },
+    { label: "Ansiedad o estrés laboral/personal", severity: "standard" },
+    { label: "Seguimiento terapéutico", severity: "standard" },
+    { label: "Trastornos del sueño", severity: "standard" },
+    { label: "Terapia de pareja o familiar", severity: "standard" },
+  ],
+  "Nutrición": [
+    { label: "Desnutrición severa o anemia aguda", severity: "high" },
+    { label: "Plan alimenticio para pérdida de peso", severity: "standard" },
+    { label: "Control de diabetes o hipertensión", severity: "standard" },
+    { label: "Educación nutricional", severity: "standard" },
+    { label: "Alergias o intolerancias alimentarias", severity: "standard" },
+  ],
+};
 
 const DOCTORS: Record<string, string[]> = {
   "Medicina General": ["Dr. Esteban Rodríguez", "Dra. María Alfaro", "Dr. Luis Chaves"],
@@ -59,9 +94,17 @@ export default function Appointments() {
   
   const [province, setProvince] = useState('');
   const [specialty, setSpecialty] = useState('');
-  const [selectedReason, setSelectedReason] = useState<typeof REASONS[0] | null>(null);
+  const [selectedReason, setSelectedReason] = useState<{ label: string, severity: 'high' | 'standard' } | null>(null);
   const [isBooking, setIsBooking] = useState(false);
   const [bookedAppointment, setBookedAppointment] = useState<any>(null);
+
+  // Filtrar motivos basados en la especialidad
+  const availableReasons = specialty ? REASONS_BY_SPECIALTY[specialty] || [] : [];
+
+  // Limpiar motivo seleccionado si cambia la especialidad
+  useEffect(() => {
+    setSelectedReason(null);
+  }, [specialty]);
 
   const suggestedCenter = HEALTH_CENTERS.find(c => c.province === province) || HEALTH_CENTERS[0];
   
@@ -103,7 +146,7 @@ export default function Appointments() {
 
     setIsBooking(true);
     const appointmentDate = getSuggestedDate(selectedReason.severity);
-    const appointmentId = doc(collection(db, "temp")).id;
+    const appointmentId = doc(collection(db!, "temp")).id;
     const voucherCode = `CR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     const doctorName = getRandomDoctor(specialty);
 
@@ -123,7 +166,7 @@ export default function Appointments() {
       priority: selectedReason.severity === 'high' ? 'Alta' : 'Estándar'
     };
 
-    const appointmentRef = doc(db, 'users', user.uid, 'appointments', appointmentId);
+    const appointmentRef = doc(db!, 'users', user.uid, 'appointments', appointmentId);
     setDocumentNonBlocking(appointmentRef, newAppointment, { merge: true });
     
     setBookedAppointment(newAppointment);
@@ -176,7 +219,7 @@ export default function Appointments() {
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="text-center space-y-4 mb-12">
             <h1 className="text-4xl font-extrabold font-headline text-foreground tracking-tight">Agendamiento de Citas CR</h1>
-            <p className="text-lg text-muted-foreground">Priorización automática según necesidad médica.</p>
+            <p className="text-lg text-muted-foreground">Priorización automática según necesidad médica en la red nacional.</p>
           </div>
 
           <Card className="rounded-3xl shadow-xl border-none overflow-hidden">
@@ -215,32 +258,36 @@ export default function Appointments() {
                     <label className="text-sm font-bold text-muted-foreground flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4" /> Motivo de Consulta
                     </label>
-                    <Select onValueChange={(val) => {
-                      const reason = REASONS.find(r => r.label === val);
-                      if (reason) setSelectedReason(reason);
-                    }}>
+                    <Select 
+                      onValueChange={(val) => {
+                        const reason = availableReasons.find(r => r.label === val);
+                        if (reason) setSelectedReason(reason);
+                      }}
+                      disabled={!specialty}
+                      key={specialty} // Reiniciar select cuando cambie la especialidad
+                    >
                       <SelectTrigger className="rounded-xl h-12">
-                        <SelectValue placeholder="¿Por qué solicita la cita?" />
+                        <SelectValue placeholder={specialty ? "Elige el motivo" : "Elige primero la especialidad"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {REASONS.map(r => <SelectItem key={r.label} value={r.label}>{r.label}</SelectItem>)}
+                        {availableReasons.map(r => <SelectItem key={r.label} value={r.label}>{r.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
-                <div className="bg-muted/30 p-4 rounded-xl space-y-2">
+                <div className="bg-muted/30 p-4 rounded-xl space-y-2 min-h-[80px] flex flex-col justify-center">
                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Nota de Agendamiento</p>
                    {selectedReason?.severity === 'high' ? (
-                     <p className="text-sm text-destructive font-bold flex items-center gap-2">
+                     <p className="text-sm text-destructive font-bold flex items-center gap-2 animate-in fade-in duration-300">
                         <AlertTriangle className="h-4 w-4" /> Prioridad Alta: Cita para esta semana.
                      </p>
                    ) : selectedReason?.severity === 'standard' ? (
-                     <p className="text-sm text-secondary font-bold flex items-center gap-2">
+                     <p className="text-sm text-secondary font-bold flex items-center gap-2 animate-in fade-in duration-300">
                         <Clock className="h-4 w-4" /> Prioridad Estándar: Cita en ~2 semanas.
                      </p>
                    ) : (
-                     <p className="text-sm text-muted-foreground italic">Selecciona un motivo para ver la disponibilidad sugerida.</p>
+                     <p className="text-sm text-muted-foreground italic">Selecciona especialidad y motivo para ver disponibilidad.</p>
                    )}
                 </div>
 
@@ -277,8 +324,8 @@ export default function Appointments() {
                   <p className="opacity-80 italic leading-relaxed">Selecciona tus datos para encontrar el espacio médico más eficiente en la red nacional.</p>
                 )}
                 <div className="pt-6 border-t border-white/20">
-                   <p className="text-[10px] opacity-70 italic">
-                     * El sistema optimiza las agendas nacionales para dar respuesta inmediata a casos urgentes.
+                   <p className="text-[10px] opacity-70 italic leading-tight">
+                     * El sistema optimiza las agendas nacionales para dar respuesta inmediata a casos urgentes según disponibilidad técnica.
                    </p>
                 </div>
               </div>
