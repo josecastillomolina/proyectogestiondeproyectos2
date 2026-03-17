@@ -9,5 +9,11 @@
   NODE_VERSION = "20"
   NEXT_USE_NETLIFY_EDGE = "false"
   NODE_OPTIONS = "--max-old-space-size=4096"
-  # Desactiva la telemetría para un build más limpio
   NEXT_TELEMETRY_DISABLED = "1"
+
+# Redirecciones para asegurar que el routing de Next.js funcione en Netlify
+[[redirects]]
+  from = "/*"
+  to = "/.next/server/pages/:splat"
+  status = 200
+  force = false

@@ -1,45 +1,56 @@
-# AgendaCitas Nacional CR - Portal Oficial
+# AgendaCitas Nacional CR - Guía de Despliegue
 
-Portal oficial para la gestión de citas médicas en la Red Nacional de Salud de Costa Rica.
+Este proyecto es un portal oficial para la gestión de citas médicas en Costa Rica, construido con **Next.js 15**, **Firebase** y **Tailwind CSS**.
 
-## 🚀 PASOS PARA SUBIR A GITHUB (EJECUTA ESTO AHORA)
+## 🛠️ Variables de Entorno Necesarias
 
-Copia y pega estos comandos **uno por uno** en tu **TERMINAL** y presiona **Enter** después de cada uno:
+Debes configurar las siguientes variables en **Netlify (Site settings > Environment variables)**:
 
-1. **Limpiar historial anterior**:
+| Variable | Descripción |
+|----------|-------------|
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | API Key de tu proyecto Firebase |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Dominio de Auth de Firebase |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | ID del proyecto Firebase |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | ID de la aplicación en Firebase |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Sender ID de mensajería |
+
+## 🚀 Instrucciones de Despliegue (Terminal)
+
+Ejecuta estos comandos uno por uno para subir tu proyecto a GitHub:
+
+1. **Limpiar Git anterior**:
    ```bash
    rm -rf .git
    ```
 
-2. **Iniciar repositorio nuevo**:
+2. **Iniciar repositorio**:
    ```bash
    git init
    ```
 
-3. **Añadir archivos corregidos**:
+3. **Añadir archivos**:
    ```bash
    git add .
    ```
 
-4. **Guardar cambios con mensaje de corrección**:
+4. **Primer commit**:
    ```bash
-   git commit -m "Fix total: Firebase security and Netlify build config"
+   git commit -m "🚀 Prep: Ready for Netlify deployment with Env Vars"
    ```
 
-5. **Conectar con tu repositorio de GitHub**:
+5. **Conectar a GitHub**:
    ```bash
-   git remote add origin https://github.com/josecastillomolina/proyectogestiondeproyectos2.git
+   git remote add origin https://github.com/josecastillomolina/agendadecitas.git
    ```
 
-6. **Crear rama principal**:
+6. **Subir cambios**:
    ```bash
    git branch -M main
-   ```
-
-7. **Subir todo a la fuerza (limpiar errores previos)**:
-   ```bash
    git push -u origin main --force
    ```
 
-## 🛠️ Despliegue en Netlify
-Una vez completado el paso 7, ve a tu panel de Netlify y selecciona **"Retry deploy"**. El sistema ahora está configurado para evitar el error de acceso a propiedades nulas (`.get`) durante la construcción.
+## 🌐 Configuración en Netlify
+
+1. Ve a **Deploys > Trigger deploy**.
+2. Asegúrate de que el **Build Command** sea `npm run build`.
+3. El **Publish Directory** debe ser `.next`.
