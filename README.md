@@ -2,21 +2,21 @@
 
 Este proyecto es un portal oficial para la gestión de citas médicas en Costa Rica, construido con **Next.js 15**, **Firebase** y **Tailwind CSS**.
 
-## 🛠️ Variables de Entorno Necesarias
+## 🛠️ 1. Configuración de Variables de Entorno (IMPORTANTE)
 
-Debes configurar las siguientes variables en **Netlify (Site settings > Environment variables)**:
+Para que el proyecto funcione en Netlify, debes configurar las siguientes variables en **Netlify (Site settings > Environment variables)**. Copia estos valores desde la configuración de tu proyecto en la consola de Firebase:
 
-| Variable | Descripción |
+| Nombre de la Variable | Descripción |
 |----------|-------------|
-| `NEXT_PUBLIC_FIREBASE_API_KEY` | API Key de tu proyecto Firebase |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Dominio de Auth de Firebase |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | ID del proyecto Firebase |
-| `NEXT_PUBLIC_FIREBASE_APP_ID` | ID de la aplicación en Firebase |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Tu Firebase API Key |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Tu Auth Domain (ej: proyecto.firebaseapp.com) |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | El ID de tu proyecto |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | El ID de la aplicación (1:xxxx:web:xxxx) |
 | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Sender ID de mensajería |
 
-## 🚀 Instrucciones de Despliegue (Terminal)
+## 🚀 2. Instrucciones de Subida a GitHub (Terminal)
 
-Ejecuta estos comandos uno por uno para subir tu proyecto a GitHub:
+Ejecuta estos comandos en orden para subir tu código corregido:
 
 1. **Limpiar Git anterior**:
    ```bash
@@ -38,7 +38,7 @@ Ejecuta estos comandos uno por uno para subir tu proyecto a GitHub:
    git commit -m "🚀 Prep: Ready for Netlify deployment with Env Vars"
    ```
 
-5. **Conectar a GitHub**:
+5. **Conectar a tu repositorio**:
    ```bash
    git remote add origin https://github.com/josecastillomolina/agendadecitas.git
    ```
@@ -49,8 +49,8 @@ Ejecuta estos comandos uno por uno para subir tu proyecto a GitHub:
    git push -u origin main --force
    ```
 
-## 🌐 Configuración en Netlify
+## 🌐 3. Configuración en Netlify
 
-1. Ve a **Deploys > Trigger deploy**.
-2. Asegúrate de que el **Build Command** sea `npm run build`.
+1. Ve a **Deploys > Trigger deploy** una vez que hayas configurado las variables en el paso 1.
+2. El **Build Command** debe ser `npm run build`.
 3. El **Publish Directory** debe ser `.next`.
