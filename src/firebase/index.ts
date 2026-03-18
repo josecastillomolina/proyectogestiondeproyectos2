@@ -1,4 +1,3 @@
-
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
@@ -30,7 +29,7 @@ export function initializeFirebase() {
                         process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "";
 
   if (!isValidConfig) {
-    console.warn('[Firebase App] Sincronización pendiente. Haz el "Clear cache and deploy site" en Netlify.');
+    console.warn('[Firebase App] Sincronización pendiente. Haz clic en "Deploy project without cache" en Netlify.');
     return { firebaseApp: null, auth: null, firestore: null };
   }
 

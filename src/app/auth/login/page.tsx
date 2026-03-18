@@ -1,5 +1,4 @@
-
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -37,13 +36,13 @@ export default function Login() {
     if (isLoading) return;
     setErrorMessage(null);
 
-    // Validación de disponibilidad del servicio
+    // Verificación de configuración
     if (!auth) {
-      const msg = "Sincronización pendiente: Las llaves no se detectan en el navegador. Ve a Netlify > Deploys > Trigger Deploy > 'Clear cache and deploy site'.";
+      const msg = "Sincronización de llaves pendiente en el navegador. Haz clic en 'Trigger deploy' -> 'Deploy project without cache' en tu panel de Netlify.";
       setErrorMessage(msg);
       toast({
-        title: "Configuración no detectada",
-        description: "Se requiere un despliegue limpio en Netlify para activar las llaves de acceso.",
+        title: "Paso Final Requerido",
+        description: "Haz clic en 'Deploy project without cache' en Netlify para activar las llaves.",
         variant: "destructive"
       });
       return;
@@ -59,11 +58,11 @@ export default function Login() {
       });
       router.push('/profile');
     } catch (error: any) {
-      let friendlyError = "Credenciales incorrectas o problema de conexión.";
+      let friendlyError = "Credenciales incorrectas o problema de comunicación.";
       
       if (error.code === 'auth/invalid-credential') friendlyError = "El correo o la contraseña son incorrectos.";
       else if (error.code === 'auth/too-many-requests') friendlyError = "Demasiados intentos. Espera unos minutos.";
-      else if (error.code === 'auth/network-request-failed') friendlyError = "Error de red. Verifica que las llaves en Netlify no tengan espacios extras.";
+      else if (error.code === 'auth/network-request-failed') friendlyError = "Error de red. Asegúrate de haber hecho el 'Deploy project without cache' en Netlify.";
       
       setErrorMessage(friendlyError);
       toast({
@@ -96,8 +95,12 @@ export default function Login() {
                 <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-start gap-3 text-destructive text-sm animate-in fade-in duration-300">
                   <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <p className="font-bold">Aviso del Sistema</p>
-                    <p className="leading-relaxed">{errorMessage}</p>
+                    <p className="font-bold text-xs uppercase tracking-wider">Aviso de Configuración</p>
+                    <p className="leading-relaxed font-medium">{errorMessage}</p>
+                    <div className="mt-2 pt-2 border-t border-destructive/20">
+                      <p className="text-[10px] font-bold opacity-70">EN TU CAPTURA DE PANTALLA:</p>
+                      <p className="text-[11px]">Haz clic en <strong>Trigger deploy</strong> y selecciona <strong>Deploy project without cache</strong>.</p>
+                    </div>
                   </div>
                 </div>
               )}

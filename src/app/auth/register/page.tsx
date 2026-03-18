@@ -1,5 +1,4 @@
-
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -51,12 +50,13 @@ export default function Register() {
     if (isLoading) return;
     setErrorMessage(null);
 
+    // Verificación de configuración
     if (!auth || !db) {
-      const msg = "Sincronización pendiente: Las llaves no se detectan. Ve a Netlify > Deploys > el botón gris 'Trigger Deploy' > 'Clear cache and deploy site'.";
+      const msg = "Las llaves de acceso no han sido detectadas en el navegador. Haz clic en 'Trigger deploy' -> 'Deploy project without cache' en tu panel de Netlify.";
       setErrorMessage(msg);
       toast({
-        title: "Paso final requerido",
-        description: "Haz clic en 'Clear cache and deploy site' en Netlify para activar el sistema.",
+        title: "Paso Final Requerido",
+        description: "Haz clic en 'Deploy project without cache' en Netlify para sincronizar las llaves.",
         variant: "destructive"
       });
       return;
@@ -98,12 +98,12 @@ export default function Register() {
       toast({ title: "Expediente Creado", description: "Bienvenido al sistema unificado de salud." });
       router.push('/profile');
     } catch (error: any) {
-      let friendlyMessage = "Error de comunicación con el sistema de salud.";
+      let friendlyMessage = "Error de comunicación con el sistema. Asegúrate de haber hecho el 'Deploy project without cache' en Netlify.";
       
       if (error.code === 'auth/email-already-in-use') friendlyMessage = "Este correo ya está registrado.";
       else if (error.code === 'auth/weak-password') friendlyMessage = "La contraseña es muy débil (mínimo 6 caracteres).";
       else if (error.code === 'auth/network-request-failed' || error.message?.includes('offline')) {
-        friendlyMessage = "El cliente no detecta conexión. Por favor, haz el 'Clear cache and deploy site' en Netlify.";
+        friendlyMessage = "El cliente está offline porque no detecta llaves de acceso. Haz el 'Deploy project without cache' en Netlify.";
       }
 
       setErrorMessage(friendlyMessage);
@@ -128,11 +128,11 @@ export default function Register() {
                 <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-start gap-3 text-destructive text-sm animate-in fade-in duration-300">
                   <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <p className="font-bold">Aviso de Configuración</p>
-                    <p className="leading-relaxed">{errorMessage}</p>
+                    <p className="font-bold text-xs uppercase tracking-wider">Aviso del Sistema</p>
+                    <p className="leading-relaxed font-medium">{errorMessage}</p>
                     <div className="pt-2 border-t border-destructive/20 mt-2">
-                       <p className="text-[10px] uppercase font-bold opacity-70">En tu captura de pantalla:</p>
-                       <p className="text-xs">Haz clic en el botón gris <strong>'Trigger deploy'</strong> arriba a la derecha y selecciona <strong>'Clear cache and deploy site'</strong>.</p>
+                       <p className="text-[10px] uppercase font-bold opacity-70">EN TU CAPTURA DE PANTALLA:</p>
+                       <p className="text-[11px]">Haz clic en el botón azul <strong>'Trigger deploy'</strong> arriba a la derecha y selecciona <strong>'Deploy project without cache'</strong>.</p>
                     </div>
                   </div>
                 </div>
