@@ -1,6 +1,6 @@
 /**
- * Configuración directa de Firebase.
- * Se eliminan validaciones de limpieza que podrían interferir con el valor real.
+ * Configuración oficial de Firebase.
+ * Los valores se cargan desde el archivo .env.
  */
 export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,

@@ -6,22 +6,12 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 /**
- * Inicializa los SDKs de Firebase de forma directa.
- * Incluye una tabla de diagnóstico para verificar las variables en el navegador.
+ * Inicializa los SDKs de Firebase.
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
     return { firebaseApp: null, auth: null, firestore: null };
   }
-
-  // DIAGNÓSTICO: Revisa esto en la consola del navegador (F12)
-  console.log('%c[Firebase Diagnostic]', 'color: #3498db; font-weight: bold; font-size: 14px;');
-  console.table({
-    'API Key detectada': !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    'Largo de Key': process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.length || 0,
-    'Project ID': process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'MISSING',
-    'Config apiKey': firebaseConfig.apiKey ? 'PRESENTE' : 'VACÍO',
-  });
 
   try {
     const firebaseApp = getApps().length === 0 
@@ -34,7 +24,7 @@ export function initializeFirebase() {
       firestore: getFirestore(firebaseApp)
     };
   } catch (error) {
-    console.warn('[Firebase] Fallo al inicializar. Revisa la tabla de arriba.');
+    console.warn('[Firebase] Fallo al inicializar:', error);
     return { firebaseApp: null, auth: null, firestore: null };
   }
 }
