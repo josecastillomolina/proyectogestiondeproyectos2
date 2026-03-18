@@ -27,7 +27,6 @@ export function useDoc<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
-    // Safety check: Don't initialize listener if ref is invalid or we're on server
     if (!memoizedDocRef || typeof memoizedDocRef.path === 'undefined') {
       setData(null);
       setIsLoading(false);
@@ -51,21 +50,25 @@ export function useDoc<T = any>(
           setIsLoading(false);
         },
         (err: FirestoreError) => {
-          const contextualError = new FirestorePermissionError({
-            operation: 'get',
-            path: memoizedDocRef?.path || 'unknown',
-          });
-
-          setError(contextualError);
+          // Solo emitir error de permisos si es explícitamente denegado
+          if (err.code === 'permission-denied') {
+            const contextualError = new FirestorePermissionError({
+              operation: 'get',
+              path: memoizedDocRef?.path || 'unknown',
+            });
+            errorEmitter.emit('permission-error', contextualError);
+            setError(contextualError);
+          } else {
+            setError(err);
+          }
           setData(null);
           setIsLoading(false);
-          errorEmitter.emit('permission-error', contextualError);
         }
       );
 
       return () => unsubscribe();
-    } catch (err) {
-      console.error("useDoc subscription failed:", err);
+    } catch (err: any) {
+      setError(err);
       setIsLoading(false);
       return;
     }

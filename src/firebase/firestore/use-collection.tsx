@@ -29,7 +29,6 @@ export function useCollection<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
-    // Safety check for SSR and invalid queries
     if (!memoizedTargetRefOrQuery) {
       setData(null);
       setIsLoading(false);
@@ -53,21 +52,25 @@ export function useCollection<T = any>(
           setIsLoading(false);
         },
         (err: FirestoreError) => {
-          const contextualError = new FirestorePermissionError({
-            operation: 'list',
-            path: 'collection-query',
-          });
-
-          setError(contextualError);
+          // Solo emitir error de permisos si es explícitamente denegado
+          if (err.code === 'permission-denied') {
+            const contextualError = new FirestorePermissionError({
+              operation: 'list',
+              path: 'collection-query',
+            });
+            errorEmitter.emit('permission-error', contextualError);
+            setError(contextualError);
+          } else {
+            setError(err);
+          }
           setData(null);
           setIsLoading(false);
-          errorEmitter.emit('permission-error', contextualError);
         }
       );
 
       return () => unsubscribe();
-    } catch (err) {
-      console.error("useCollection subscription failed:", err);
+    } catch (err: any) {
+      setError(err);
       setIsLoading(false);
       return;
     }

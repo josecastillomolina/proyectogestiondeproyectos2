@@ -16,6 +16,8 @@ import { useAuth, useFirestore, useUser } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, serverTimestamp, getDoc, setDoc } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function Register() {
   const router = useRouter();
@@ -50,8 +52,8 @@ export default function Register() {
 
     if (!auth || !db) {
       toast({
-        title: "Sistema no detectado",
-        description: "El portal no detecta las llaves de acceso de Firebase. Por favor configúralas en Netlify y realiza un 'Trigger Deploy'.",
+        title: "Sincronizando...",
+        description: "El sistema está conectando con los servicios nacionales. Si persiste, verifica las llaves en Netlify.",
         variant: "destructive"
       });
       return;
@@ -60,7 +62,6 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      // Intento de verificar unicidad de ID con manejo de timeout/offline
       const idRef = doc(db, 'identifications', formData.idNumber);
       
       try {
@@ -71,12 +72,17 @@ export default function Register() {
           return;
         }
       } catch (err: any) {
-        console.error("Error al conectar con Firestore:", err);
-        // Error común cuando la API Key es inválida o no hay conexión
-        if (err.code === 'unavailable' || err.code === 'permission-denied' || err.message?.includes('apiKey')) {
+        if (err.code === 'permission-denied') {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'get', path: idRef.path }));
+          setIsLoading(false);
+          return;
+        }
+        
+        // Manejo específico del error "offline" que suele ser por falta de config
+        if (err.code === 'unavailable' || err.message?.includes('offline')) {
           toast({
-            title: "Error de Configuración",
-            description: "No se pudo conectar con Firebase. Asegúrate de que las llaves en Netlify no tengan espacios y que Firestore esté habilitado.",
+            title: "Error de Conexión",
+            description: "No se pudo establecer comunicación con el servidor. Realiza un 'Trigger Deploy' en Netlify si acabas de agregar las llaves.",
             variant: "destructive"
           });
           setIsLoading(false);
@@ -113,7 +119,7 @@ export default function Register() {
     } catch (error: any) {
       toast({ 
         title: "Fallo en el Registro", 
-        description: error.message || "Error al crear el expediente. Inténtalo de nuevo.", 
+        description: error.message || "Error al crear el expediente.", 
         variant: "destructive" 
       });
     } finally {
