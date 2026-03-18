@@ -2,68 +2,41 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
 /**
- * Valida si la configuración de Firebase tiene los campos mínimos requeridos.
- */
-function isConfigValid() {
-  return !!(
-    firebaseConfig.apiKey &&
-    firebaseConfig.authDomain &&
-    firebaseConfig.projectId &&
-    firebaseConfig.appId
-  );
-}
-
-/**
- * Inicializa los SDKs de Firebase con verificaciones de seguridad robustas.
+ * Inicializa los SDKs de Firebase de forma segura para el cliente y servidor.
  */
 export function initializeFirebase() {
+  // Evitar ejecución en el lado del servidor durante el build/SSR
   if (typeof window === 'undefined') {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
-  // Si la configuración no es válida (faltan variables de entorno),
-  // retornamos nulos para que la UI maneje el error con notificaciones.
-  if (!isConfigValid()) {
-    console.warn('Firebase: Configuración incompleta. Revisa las variables NEXT_PUBLIC_ en tu entorno.');
+  // Validar configuración mínima para evitar errores de SDK
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "undefined") {
+    console.warn('Firebase: NEXT_PUBLIC_FIREBASE_API_KEY no detectada. Los servicios estarán deshabilitados.');
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
-  let firebaseApp: FirebaseApp;
-
-  if (!getApps().length) {
-    try {
-      firebaseApp = initializeApp(firebaseConfig);
-    } catch (e) {
-      console.error('Error crítico al inicializar Firebase:', e);
-      return { firebaseApp: null, auth: null, firestore: null };
-    }
-  } else {
-    firebaseApp = getApp();
-  }
-
-  return getSdks(firebaseApp);
-}
-
-export function getSdks(firebaseApp: FirebaseApp) {
-  if (!firebaseApp) return { firebaseApp: null, auth: null, firestore: null };
-  
   try {
+    let firebaseApp: FirebaseApp;
+
+    if (!getApps().length) {
+      firebaseApp = initializeApp(firebaseConfig);
+    } else {
+      firebaseApp = getApp();
+    }
+
     return {
       firebaseApp,
       auth: getAuth(firebaseApp),
       firestore: getFirestore(firebaseApp)
     };
-  } catch (e) {
-    console.error('Error al obtener servicios de Firebase:', e);
-    return {
-      firebaseApp,
-      auth: null,
-      firestore: null
-    };
+  } catch (error) {
+    console.error('Error crítico en inicialización de Firebase:', error);
+    return { firebaseApp: null, auth: null, firestore: null };
   }
 }
 
