@@ -30,43 +30,44 @@ export function Navbar() {
               <span className="text-xl font-bold font-headline tracking-tight text-primary">AgendaCitas Nacional CR</span>
             </Link>
           </div>
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-center space-x-4">
-              <Link href="/locations" className="text-foreground/70 hover:text-primary px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
-                <MapPin className="h-4 w-4" /> Sedes Nacionales
-              </Link>
-              <Link href="/appointments" className="text-foreground/70 hover:text-primary px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
-                <Calendar className="h-4 w-4" /> Agendar Cita
-              </Link>
-              
-              {!isUserLoading && (
-                <>
-                  {user ? (
-                    <>
-                      <Link href="/profile" className="text-foreground/70 hover:text-primary px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
-                        <User className="h-4 w-4" /> Mi Expediente
+          <div className="flex items-center space-x-4">
+            <Link href="/locations" className="hidden md:flex text-foreground/70 hover:text-primary px-3 py-2 rounded-md text-sm font-medium items-center gap-2 transition-colors">
+              <MapPin className="h-4 w-4" /> Sedes Nacionales
+            </Link>
+            
+            {/* Si no está cargando el usuario, mostramos el estado actual */}
+            {!isUserLoading ? (
+              <>
+                {user ? (
+                  <>
+                    <Link href="/profile" className="text-foreground/70 hover:text-primary px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
+                      <User className="h-4 w-4" /> Mi Expediente
+                    </Link>
+                    <Button variant="ghost" size="sm" onClick={handleSignOut} className="hidden md:flex text-muted-foreground hover:text-destructive rounded-full">
+                      <LogOut className="h-4 w-4 mr-2" /> Salir
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button asChild variant="outline" size="sm" className="font-bold border-primary text-primary hover:bg-primary hover:text-white rounded-full px-6">
+                      <Link href="/auth/login" className="flex items-center gap-2">
+                        <LogIn className="h-4 w-4" /> Ingresar
                       </Link>
-                      <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground hover:text-destructive rounded-full">
-                        <LogOut className="h-4 w-4 mr-2" /> Salir
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button asChild variant="outline" size="sm" className="font-bold border-primary text-primary hover:bg-primary hover:text-white rounded-full px-6">
-                        <Link href="/auth/login" className="flex items-center gap-2">
-                          <LogIn className="h-4 w-4" /> Ingresar
-                        </Link>
-                      </Button>
-                      <Button asChild variant="default" size="sm" className="bg-primary hover:bg-primary/90 rounded-full font-bold px-6 shadow-md shadow-primary/20">
-                        <Link href="/auth/register" className="flex items-center gap-2">
-                          Registrarse
-                        </Link>
-                      </Button>
-                    </>
-                  )}
-                </>
-              )}
-            </div>
+                    </Button>
+                    <Button asChild variant="default" size="sm" className="hidden sm:flex bg-primary hover:bg-primary/90 rounded-full font-bold px-6 shadow-md shadow-primary/20">
+                      <Link href="/auth/register">Registrarse</Link>
+                    </Button>
+                  </>
+                )}
+              </>
+            ) : (
+              /* Mientras carga (o si falló Firebase), mostramos los botones de fallback para no bloquear el acceso */
+              <div className="flex items-center space-x-2">
+                <Button asChild variant="outline" size="sm" className="rounded-full px-6">
+                  <Link href="/auth/login">Ingresar</Link>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

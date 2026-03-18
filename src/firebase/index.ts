@@ -6,19 +6,13 @@ import { getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from './config';
 
 /**
- * Inicialización de Firebase con diagnóstico de variables.
+ * Inicialización limpia de Firebase.
+ * No realiza validaciones de formato ni lanza excepciones que bloqueen React.
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
     return { firebaseApp: null, auth: null, firestore: null };
   }
-
-  // DIAGNÓSTICO DE VARIABLES (F12)
-  console.log('=== FIREBASE ENV CHECK ===');
-  console.log('CONFIG_API_KEY:', JSON.stringify(firebaseConfig.apiKey));
-  console.log('ENV_API_KEY:', JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_API_KEY));
-  console.log('PROJECT_ID:', JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID));
-  console.log('==========================');
 
   try {
     const firebaseApp = getApps().length === 0 
@@ -31,7 +25,7 @@ export function initializeFirebase() {
       firestore: getFirestore(firebaseApp)
     };
   } catch (error) {
-    console.error('[Firebase Init Error]:', error);
+    console.warn('[Firebase Init]: No se pudieron cargar los servicios. Verifique sus llaves en .env.local', error);
     return { firebaseApp: null, auth: null, firestore: null };
   }
 }

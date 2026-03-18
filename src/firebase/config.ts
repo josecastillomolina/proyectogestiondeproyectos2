@@ -1,14 +1,12 @@
 /**
- * Configuración oficial de Firebase para el Portal Nacional.
- * Se ha hardcodeado temporalmente la API Key para diagnosticar fallos de lectura en .env.local.
+ * Configuración oficial de Firebase.
+ * Se utiliza únicamente process.env para evitar hardcoding.
  */
-
 export const firebaseConfig = {
-  // Hardcodeado temporalmente para saltar el error de 'undefined' en Firebase Studio
-  apiKey: "AIzaSyDF6Yyl1TYkBBIKdWY_dcvki1F6eLiOuZA",
-  authDomain: "agendacitas-nacional.firebaseapp.com",
-  projectId: "agendacitas-nacional",
-  storageBucket: "agendacitas-nacional.appspot.com",
-  messagingSenderId: "4902577265",
-  appId: "1:4902577265:web:8655c6f37626926978430a",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };

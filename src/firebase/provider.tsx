@@ -59,6 +59,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   });
 
   useEffect(() => {
+    // Si no hay auth (Firebase falló), marcamos como "no cargando" de inmediato para no bloquear UI.
     if (!auth) { 
       setUserAuthState({ user: null, isUserLoading: false, userError: null });
       return;
@@ -70,8 +71,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
       },
       (error) => { 
-        // Log de advertencia en lugar de error crítico
-        console.warn("FirebaseProvider: onAuthStateChanged waiting...");
+        console.warn("FirebaseProvider: onAuthStateChanged error:", error);
         setUserAuthState({ user: null, isUserLoading: false, userError: error });
       }
     );
