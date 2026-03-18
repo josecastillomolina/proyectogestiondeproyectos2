@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,7 +13,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { User, Mail, Lock, Phone, ArrowLeft, Loader2, CreditCard, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirestore, useUser } from '@/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, serverTimestamp, getDoc, setDoc } from 'firebase/firestore';
 
 export default function Register() {
@@ -49,7 +50,7 @@ export default function Register() {
     setErrorMessage(null);
 
     if (!auth || !db) {
-      setErrorMessage("Los servicios de salud digitales no están disponibles.");
+      setErrorMessage("Los servicios de salud digitales no están disponibles actualmente.");
       return;
     }
 
@@ -61,7 +62,7 @@ export default function Register() {
       const idSnap = await getDoc(idRef);
       
       if (idSnap.exists()) {
-        setErrorMessage("Esta identificación ya posee un expediente registrado.");
+        setErrorMessage("Esta identificación ya posee un expediente registrado en el sistema nacional.");
         setIsLoading(false);
         return;
       }
@@ -70,13 +71,19 @@ export default function Register() {
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const firebaseUser = userCredential.user;
 
+      // Actualizar el nombre en el perfil de Auth para disponibilidad inmediata
+      await updateProfile(firebaseUser, {
+        displayName: formData.fullName
+      });
+
       // 3. Guardar mapeo de identificación y Perfil (Estructura completa)
       const [firstName, ...lastNameParts] = formData.fullName.split(' ');
       const lastName = lastNameParts.join(' ');
 
-      // Usamos setDoc directamente para la creación inicial para garantizar integridad
+      // Mapeo de unicidad
       await setDoc(idRef, { userId: firebaseUser.uid });
       
+      // Documento de perfil de usuario
       await setDoc(doc(db, 'users', firebaseUser.uid), {
         id: firebaseUser.uid,
         username: formData.username,
@@ -85,23 +92,22 @@ export default function Register() {
         email: formData.email,
         phoneNumber: formData.phone,
         identificationType: formData.identificationType,
-        idNumber: formData.idNumber,
+        idNumber: formData.idNumber, // Aseguramos que se guarde el número de cédula
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
 
-      toast({ title: "Registro Exitoso", description: "Bienvenido al Sistema Nacional de Salud." });
+      toast({ title: "Expediente Creado", description: "Bienvenido al Sistema Nacional de Salud de Costa Rica." });
       router.push('/profile');
     } catch (error: any) {
-      console.error(error);
-      let friendlyMessage = "No se pudo completar el registro.";
+      let friendlyMessage = "No se pudo completar el registro oficial.";
       
       if (error.code === 'auth/email-already-in-use') {
-        friendlyMessage = "Este correo electrónico ya está registrado.";
+        friendlyMessage = "Este correo electrónico ya está registrado en la base de datos nacional.";
       } else if (error.code === 'auth/weak-password') {
-        friendlyMessage = "La contraseña debe tener al menos 6 caracteres.";
-      } else {
-        friendlyMessage = error.message || "Ocurrió un error al procesar su solicitud.";
+        friendlyMessage = "La contraseña debe tener al menos 6 caracteres por seguridad.";
+      } else if (error.code === 'auth/invalid-email') {
+        friendlyMessage = "El formato del correo electrónico no es válido.";
       }
 
       setErrorMessage(friendlyMessage);
@@ -118,7 +124,7 @@ export default function Register() {
         <Card className="w-full max-w-2xl shadow-2xl rounded-3xl border-none overflow-hidden">
           <div className="bg-primary p-6 text-white text-center">
              <h2 className="text-2xl font-bold font-headline">Registro de Salud Nacional</h2>
-             <p className="text-white/80 text-sm">Crea tu expediente digital único</p>
+             <p className="text-white/80 text-sm">Crea tu expediente digital único para la red de salud</p>
           </div>
           <CardContent className="p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -137,11 +143,11 @@ export default function Register() {
                   <Label htmlFor="fullName" className="text-sm font-bold">Nombre Completo</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="fullName" name="fullName" placeholder="Tu nombre" className="pl-10 h-11 rounded-xl" required value={formData.fullName} onChange={handleChange} />
+                    <Input id="fullName" name="fullName" placeholder="Tu nombre y apellidos" className="pl-10 h-11 rounded-xl" required value={formData.fullName} onChange={handleChange} />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="username" className="text-sm font-bold">Usuario</Label>
+                  <Label htmlFor="username" className="text-sm font-bold">Nombre de Usuario</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input id="username" name="username" placeholder="usuario123" className="pl-10 h-11 rounded-xl" required value={formData.username} onChange={handleChange} />
@@ -186,7 +192,7 @@ export default function Register() {
           </CardContent>
           <CardFooter className="justify-center border-t py-6 bg-muted/20">
             <p className="text-sm text-muted-foreground">
-              ¿Ya tienes cuenta activa? <Link href="/auth/login" className="text-primary font-bold hover:underline">Inicia Sesión</Link>
+              ¿Ya tienes cuenta activa? <Link href="/auth/login" className="text-primary font-bold hover:underline">Inicia Sesión aquí</Link>
             </p>
           </CardFooter>
         </Card>
