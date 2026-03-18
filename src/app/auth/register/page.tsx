@@ -49,9 +49,8 @@ export default function Register() {
     if (isLoading) return;
     setErrorMessage(null);
 
-    // Verificación de configuración antes de intentar registrar
     if (!auth || !db) {
-      setErrorMessage("Sistema no listo. Realiza un 'Deploy project without cache' en Netlify para activar las llaves.");
+      setErrorMessage("El sistema de salud no está configurado correctamente.");
       return;
     }
 
@@ -99,16 +98,18 @@ export default function Register() {
       
       let friendlyMessage = "No se pudo completar el registro.";
       
-      if (error.code?.includes('api-key-not-valid') || error.message?.includes('api-key-not-valid')) {
-        friendlyMessage = "Llave API inválida. Ve a Netlify y realiza un 'Deploy project without cache' para que el sistema reconozca tus llaves.";
+      if (error.code === 'auth/api-key-not-valid' || error.message?.includes('api-key-not-valid')) {
+        friendlyMessage = "La llave de acceso de Firebase no es válida. Ve a Firebase Console → Project Settings → copia la apiKey completa y actualiza tu .env.local";
       } else if (error.code === 'auth/email-already-in-use') {
         friendlyMessage = "Este correo ya está registrado en el portal.";
       } else if (error.code === 'auth/network-request-failed') {
-        friendlyMessage = "Error de red. Verifica tu conexión o que las llaves en Netlify no tengan espacios.";
-      } else if (error.code === 'auth/operation-not-allowed') {
-        friendlyMessage = "El método de correo/contraseña no está habilitado en tu consola de Firebase.";
+        friendlyMessage = "Error de conexión. Verifica tu internet.";
+      } else if (error.code === 'auth/configuration-not-found') {
+        friendlyMessage = "Firebase no configurado correctamente en el servidor.";
+      } else if (error.code === 'auth/invalid-api-key') {
+        friendlyMessage = "Llave de acceso inválida. Verifica tu configuración de entorno.";
       } else {
-        friendlyMessage = `Error: ${error.message}`;
+        friendlyMessage = `Error (${error.code || 'desconocido'}): ${error.message}`;
       }
 
       setErrorMessage(friendlyMessage);

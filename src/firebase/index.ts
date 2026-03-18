@@ -6,36 +6,37 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 /**
- * Diagnóstico seguro de configuración.
- * Verifica si las variables existen sin exponer sus valores reales.
+ * Diagnóstico de API Key para depuración en consola del navegador.
+ * Las API Keys válidas de Firebase siempre empiezan con "AIza" y tienen 39 caracteres.
  */
-export function checkConfig() {
-  if (typeof window === 'undefined') return {};
-  return {
-    apiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: !!process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    projectId: !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    appId: !!process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-    messagingSenderId: !!process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  };
+const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+if (typeof window !== 'undefined') {
+  console.log('[API Key Debug]', {
+    exists: !!apiKey,
+    length: apiKey?.length,
+    startsWithAIza: apiKey?.startsWith('AIza'),
+    first6chars: apiKey?.substring(0, 6),
+    last4chars: apiKey?.slice(-4),
+  });
 }
 
 /**
- * Inicializa los SDKs de Firebase con validación de entorno.
+ * Inicializa los SDKs de Firebase con validación estricta de la API Key.
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
-  const configStatus = checkConfig();
-  console.log('[Firebase Diagnostic]', configStatus);
-
   try {
+    // Validación de formato antes de inicializar
+    if (!apiKey || !apiKey.startsWith('AIza') || apiKey.length !== 39) {
+      console.error('[Firebase] Error Crítico: La API Key no tiene un formato válido (debe empezar con AIza y tener 39 caracteres).');
+    }
+
     let firebaseApp: FirebaseApp;
 
     if (!getApps().length) {
-      // Si la API Key no existe o es 'undefined', el SDK lanzará el error de API Key inválida
       firebaseApp = initializeApp(firebaseConfig);
     } else {
       firebaseApp = getApp();
