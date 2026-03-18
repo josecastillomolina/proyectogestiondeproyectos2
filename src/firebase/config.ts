@@ -1,22 +1,14 @@
 /**
  * Configuración oficial de Firebase para el Portal Nacional.
- * Implementa una limpieza agresiva para asegurar que no se cuelen comillas, comas o espacios.
+ * Se ha hardcodeado temporalmente la API Key para diagnosticar fallos de lectura en .env.local.
  */
-const cleanEnvValue = (key: string) => {
-  const value = process.env[key];
-  if (!value) return '';
-  
-  return value
-    .trim() // Elimina espacios en blanco
-    .replace(/['",]/g, '') // Elimina comillas simples, dobles y comas accidentales
-    .replace(/^apiKey:\s*/, ''); // Por si se copió el nombre del campo "apiKey: ..."
-};
 
 export const firebaseConfig = {
-  apiKey: cleanEnvValue('NEXT_PUBLIC_FIREBASE_API_KEY'),
-  authDomain: cleanEnvValue('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'),
-  projectId: cleanEnvValue('NEXT_PUBLIC_FIREBASE_PROJECT_ID'),
-  storageBucket: cleanEnvValue('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'),
-  messagingSenderId: cleanEnvValue('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'),
-  appId: cleanEnvValue('NEXT_PUBLIC_FIREBASE_APP_ID'),
+  // Hardcodeado temporalmente para saltar el error de 'undefined' en Firebase Studio
+  apiKey: "AIzaSyDF6Yyl1TYkBBIKdWY_dcvki1F6eLiOuZA",
+  authDomain: "agendacitas-nacional.firebaseapp.com",
+  projectId: "agendacitas-nacional",
+  storageBucket: "agendacitas-nacional.appspot.com",
+  messagingSenderId: "4902577265",
+  appId: "1:4902577265:web:8655c6f37626926978430a",
 };
