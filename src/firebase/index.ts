@@ -6,8 +6,8 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 /**
- * Inicializa los SDKs de Firebase de forma directa y silenciosa.
- * Incluye una tabla de diagnóstico para verificar las variables de entorno en el navegador.
+ * Inicializa los SDKs de Firebase de forma directa.
+ * Incluye una tabla de diagnóstico para verificar las variables en el navegador.
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
@@ -19,9 +19,8 @@ export function initializeFirebase() {
   console.table({
     'API Key detectada': !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     'Largo de Key': process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.length || 0,
-    'Empieza con AIza': process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.startsWith('AIza') || false,
     'Project ID': process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'MISSING',
-    'Auth Domain': process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'MISSING',
+    'Config apiKey': firebaseConfig.apiKey ? 'PRESENTE' : 'VACÍO',
   });
 
   try {
