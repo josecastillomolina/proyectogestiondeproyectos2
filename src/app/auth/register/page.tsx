@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -48,80 +47,92 @@ export default function Register() {
     if (isLoading) return;
     setErrorMessage(null);
 
-    if (!auth || !db) {
-      setErrorMessage("Servicios no disponibles. Verifica tu conexión.");
+    // Protección contra valores undefined o nulos (Fix trimEnd)
+    const email = (formData.email ?? '').trim();
+    const password = (formData.password ?? '').trim();
+    const idNumber = (formData.idNumber ?? '').trim();
+    const fullName = (formData.fullName ?? '').trim();
+    const username = (formData.username ?? '').trim();
+    const phone = (formData.phone ?? '').trim();
+
+    if (!email || !password || !idNumber || !fullName) {
+      setErrorMessage("Por favor completa todos los campos requeridos.");
+      return;
+    }
+
+    if (!auth) {
+      setErrorMessage("Servicio de autenticación no disponible.");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // 1. Verificar si la cédula ya existe
-      const idRef = doc(db, 'identifications', formData.idNumber);
-      let idSnap;
-      
-      try {
-        idSnap = await getDoc(idRef);
-      } catch (err: any) {
-        if (err.code === 'unavailable') {
-          throw new Error("El servidor de base de datos no responde. ¿Has creado la base de datos Firestore en el console?");
+      // 1. Intentar verificar si la cédula existe (Opcional si Firestore falla)
+      if (db) {
+        try {
+          const idRef = doc(db, 'identifications', idNumber);
+          const idSnap = await getDoc(idRef);
+          if (idSnap.exists()) {
+            setErrorMessage("Esta cédula ya posee un expediente registrado.");
+            setIsLoading(false);
+            return;
+          }
+        } catch (dbError: any) {
+          console.warn("[Firestore] Error al verificar ID:", dbError.message);
+          // Si el error es 'unavailable', avisamos pero podemos intentar seguir solo con Auth si se desea,
+          // aunque para un expediente médico Firestore es crítico.
+          if (dbError.code === 'unavailable') {
+            setErrorMessage("El servidor de base de datos no responde. Asegúrate de haber creado Firestore en tu consola.");
+            setIsLoading(false);
+            return;
+          }
         }
-        throw err;
-      }
-      
-      if (idSnap.exists()) {
-        setErrorMessage("Esta cédula ya posee un expediente registrado.");
-        setIsLoading(false);
-        return;
       }
 
       // 2. Crear usuario en Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
 
-      // 3. Actualizar perfil
-      await updateProfile(firebaseUser, {
-        displayName: formData.fullName
-      });
+      // 3. Actualizar perfil de Auth
+      await updateProfile(firebaseUser, { displayName: fullName });
 
-      // 4. Guardar expediente
-      const [firstName = '', ...lastNameParts] = formData.fullName.split(' ');
-      const lastName = lastNameParts.join(' ');
+      // 4. Intentar guardar en Firestore
+      if (db) {
+        try {
+          const [firstName = '', ...lastNameParts] = fullName.split(' ');
+          const lastName = lastNameParts.join(' ');
 
-      await setDoc(idRef, { userId: firebaseUser.uid, idNumber: formData.idNumber });
-      
-      await setDoc(doc(db, 'users', firebaseUser.uid), {
-        id: firebaseUser.uid,
-        username: formData.username,
-        firstName: firstName,
-        lastName: lastName,
-        email: formData.email,
-        phoneNumber: formData.phone,
-        identificationType: 'Nacional',
-        idNumber: formData.idNumber,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        bloodType: 'Pendiente',
-        allergies: 'Ninguna reportada'
-      });
+          await setDoc(doc(db, 'identifications', idNumber), { userId: firebaseUser.uid, idNumber });
+          await setDoc(doc(db, 'users', firebaseUser.uid), {
+            id: firebaseUser.uid,
+            username,
+            firstName,
+            lastName,
+            email,
+            phoneNumber: phone,
+            identificationType: 'Nacional',
+            idNumber,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            bloodType: 'Pendiente',
+            allergies: 'Ninguna reportada'
+          });
+        } catch (fsError: any) {
+          console.error("[Firestore] Error al crear expediente:", fsError.message);
+          toast({ title: "Cuenta creada", description: "Tu cuenta de acceso está lista, pero el expediente clínico digital falló al guardarse.", variant: "destructive" });
+        }
+      }
 
-      toast({ title: "Expediente Creado", description: "Bienvenido a la Red Nacional de Salud." });
+      toast({ title: "Registro Completo", description: "Bienvenido a la Red Nacional de Salud." });
       router.push('/profile');
     } catch (error: any) {
       let friendlyMessage = "Error al completar el registro.";
-      
-      if (error.code === 'auth/email-already-in-use') {
-        friendlyMessage = "Este correo ya está en uso.";
-      } else if (error.code === 'auth/operation-not-allowed') {
-        friendlyMessage = "El ingreso con correo/contraseña no está habilitado en Firebase Console.";
-      } else if (error.code === 'unavailable' || error.message.includes('unavailable')) {
-        friendlyMessage = "Servicio de Salud no disponible temporalmente. Verifica que Firestore esté habilitado.";
-      } else {
-        friendlyMessage = `Error: ${error.message || error.code}`;
-      }
+      if (error.code === 'auth/email-already-in-use') friendlyMessage = "Este correo ya está en uso.";
+      else if (error.code === 'auth/weak-password') friendlyMessage = "La contraseña debe tener al menos 6 caracteres.";
+      else friendlyMessage = error.message || "Error desconocido en el registro.";
 
       setErrorMessage(friendlyMessage);
-      toast({ title: "Aviso de Sistema", description: friendlyMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }

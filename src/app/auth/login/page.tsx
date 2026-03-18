@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -37,33 +36,40 @@ export default function Login() {
     if (isLoading) return;
     setErrorMessage(null);
 
+    // Protección contra valores undefined o nulos (Fix trimEnd)
+    const email = (formData.email ?? '').trim();
+    const password = (formData.password ?? '').trim();
+
+    if (!email || !password) {
+      setErrorMessage("Por favor ingresa tu correo y contraseña.");
+      return;
+    }
+
     if (!auth) {
-      setErrorMessage("El servicio de autenticación no está disponible.");
+      setErrorMessage("El servicio de autenticación no está disponible. Verifica tu conexión.");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      await signInWithEmailAndPassword(auth, email, password);
       toast({ title: "Acceso Exitoso", description: "Bienvenido de nuevo al portal nacional." });
       router.push('/profile');
     } catch (error: any) {
-      // Manejamos el error de forma silenciosa para el sistema de logs, pero informamos al usuario
       let friendlyError = "No se pudo iniciar sesión.";
       
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        friendlyError = "Correo electrónico o contraseña incorrectos. Verifica tus datos e intenta de nuevo.";
+        friendlyError = "Correo electrónico o contraseña incorrectos.";
       } else if (error.code === 'auth/too-many-requests') {
-        friendlyError = "Demasiados intentos fallidos. Tu cuenta ha sido bloqueada temporalmente.";
-      } else if (error.code === 'auth/api-key-not-valid') {
-        friendlyError = "Error de configuración técnica (API Key). Contacte a soporte.";
+        friendlyError = "Demasiados intentos fallidos. Intenta más tarde.";
+      } else if (error.code === 'auth/api-key-not-valid' || error.code === 'auth/invalid-api-key') {
+        friendlyError = "Error de configuración: API Key no válida.";
       } else {
-        friendlyError = "Error al intentar ingresar. Por favor intente más tarde.";
+        friendlyError = error.message || "Error al intentar ingresar.";
       }
       
       setErrorMessage(friendlyError);
-      toast({ title: "Aviso de Ingreso", description: friendlyError, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
