@@ -6,36 +6,21 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 /**
- * Inicializa los SDKs de Firebase de forma segura para el cliente.
- * Incluye diagnósticos para variables de entorno en Netlify.
+ * Inicializa los SDKs de Firebase.
+ * Se ha simplificado para asegurar que siempre intente conectar si hay una configuración básica.
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
-  // Diagnóstico para la consola del navegador
-  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-  const check = {
-    apiKey: !!apiKey && apiKey !== "undefined" && apiKey !== "",
-    authDomain: !!process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    projectId: !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    appId: !!process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  };
-
-  console.log('[Firebase App] Diagnóstico de variables:', check);
-
-  if (!check.apiKey) {
-    console.warn('[Firebase App] Sincronización pendiente. Se requiere "Deploy project without cache" en Netlify.');
-    return { firebaseApp: null, auth: null, firestore: null };
-  }
-
   try {
     let firebaseApp: FirebaseApp;
 
+    // Verificar si ya hay una instancia para evitar el error de "duplicate app"
     if (!getApps().length) {
+      // Intentar inicializar con la configuración importada
       firebaseApp = initializeApp(firebaseConfig);
-      console.log('[Firebase App] Inicializado con éxito.');
     } else {
       firebaseApp = getApp();
     }
@@ -46,7 +31,7 @@ export function initializeFirebase() {
       firestore: getFirestore(firebaseApp)
     };
   } catch (error) {
-    console.error('[Firebase App] Error crítico de inicialización:', error);
+    console.error('[Firebase] Fallo al inicializar:', error);
     return { firebaseApp: null, auth: null, firestore: null };
   }
 }

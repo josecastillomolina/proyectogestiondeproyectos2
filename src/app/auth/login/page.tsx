@@ -36,15 +36,8 @@ export default function Login() {
     if (isLoading) return;
     setErrorMessage(null);
 
-    // Verificación de configuración
     if (!auth) {
-      const msg = "Error: El sistema no detecta las llaves de acceso. Por favor, haz clic en 'Trigger deploy' -> 'Deploy project without cache' en tu panel de Netlify.";
-      setErrorMessage(msg);
-      toast({
-        title: "Falta Configuración",
-        description: "Las llaves de Firebase no están sincronizadas.",
-        variant: "destructive"
-      });
+      setErrorMessage("El sistema de autenticación no está listo. Verifica las variables en Netlify.");
       return;
     }
 
@@ -52,28 +45,26 @@ export default function Login() {
 
     try {
       await signInWithEmailAndPassword(auth, formData.email, formData.password);
-      toast({
-        title: "Acceso Exitoso",
-        description: "Bienvenido al portal nacional.",
-      });
+      toast({ title: "Acceso Exitoso", description: "Bienvenido de vuelta." });
       router.push('/profile');
     } catch (error: any) {
-      let friendlyError = "Error de acceso: Credenciales inválidas o problema de red.";
+      console.error("Login Error:", error);
+      let friendlyError = `Error (${error.code || 'unknown'}): No se pudo iniciar sesión.`;
       
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        friendlyError = "El correo electrónico o la contraseña son incorrectos.";
+      if (error.code === 'auth/invalid-credential') {
+        friendlyError = "Correo o contraseña incorrectos.";
+      } else if (error.code === 'auth/user-not-found') {
+        friendlyError = "Usuario no encontrado.";
+      } else if (error.code === 'auth/wrong-password') {
+        friendlyError = "Contraseña incorrecta.";
       } else if (error.code === 'auth/too-many-requests') {
-        friendlyError = "Demasiados intentos fallidos. Por favor, espera unos minutos.";
+        friendlyError = "Demasiados intentos. Intenta más tarde.";
       } else if (error.code === 'auth/network-request-failed') {
-        friendlyError = "Error de red: No se pudo contactar al servidor de salud.";
+        friendlyError = "Error de red. Verifica tu conexión.";
       }
       
       setErrorMessage(friendlyError);
-      toast({
-        title: "Error de Ingreso",
-        description: friendlyError,
-        variant: "destructive"
-      });
+      toast({ title: "Error de Ingreso", description: friendlyError, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -90,7 +81,7 @@ export default function Login() {
             </div>
             <CardTitle className="text-3xl font-bold font-headline text-foreground tracking-tight">Acceso al Portal</CardTitle>
             <CardDescription className="text-base text-muted-foreground">
-              Ingresa para gestionar tus citas médicas nacionales.
+              Ingresa para gestionar tus citas médicas.
             </CardDescription>
           </CardHeader>
           <CardContent className="px-8 pb-8">
@@ -112,7 +103,7 @@ export default function Login() {
                   <input
                     id="email"
                     type="email"
-                    className="flex h-11 w-full rounded-xl border border-input bg-background pl-10 pr-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    className="flex h-11 w-full rounded-xl border border-input bg-background pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none"
                     placeholder="ejemplo@correo.com"
                     required
                     value={formData.email}
@@ -128,7 +119,7 @@ export default function Login() {
                   <input
                     id="password"
                     type="password"
-                    className="flex h-11 w-full rounded-xl border border-input bg-background pl-10 pr-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    className="flex h-11 w-full rounded-xl border border-input bg-background pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none"
                     placeholder="••••••••"
                     required
                     value={formData.password}
@@ -140,10 +131,10 @@ export default function Login() {
               <div className="flex flex-col gap-3 pt-4">
                 <Button 
                   type="submit" 
-                  className="w-full h-12 text-lg rounded-full shadow-lg shadow-primary/20 transition-all active:scale-95" 
+                  className="w-full h-12 text-lg rounded-full shadow-lg shadow-primary/20" 
                   disabled={isLoading}
                 >
-                  {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Ingresar al Sistema"}
+                  {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Ingresar"}
                 </Button>
                 <Button type="button" variant="ghost" className="w-full rounded-full" onClick={() => router.push('/')}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Volver al Inicio
@@ -153,10 +144,7 @@ export default function Login() {
           </CardContent>
           <CardFooter className="flex flex-col gap-4 border-t py-6 bg-muted/20">
             <p className="text-sm text-muted-foreground text-center">
-              ¿Aún no tienes expediente digital?{' '}
-              <Link href="/auth/register" className="text-primary font-bold hover:underline">
-                Regístrate Aquí
-              </Link>
+              ¿No tienes cuenta? <Link href="/auth/register" className="text-primary font-bold hover:underline">Regístrate</Link>
             </p>
           </CardFooter>
         </Card>
