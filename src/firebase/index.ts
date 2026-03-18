@@ -6,16 +6,17 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 /**
- * Diagnóstico Avanzado de API Key.
+ * Diagnóstico de configuración en tiempo de ejecución.
  */
 if (typeof window !== 'undefined') {
-  const rawKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-  console.log('[Firebase Key Diagnostic]', {
-    hasKey: !!rawKey,
-    length: rawKey?.length || 0,
-    prefix: rawKey?.substring(0, 4),
-    isClean: rawKey === firebaseConfig.apiKey,
-    cleanLength: firebaseConfig.apiKey.length
+  const envKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  const isEnvPresent = !!envKey && envKey !== 'undefined';
+  
+  console.log('[Firebase Runtime Check]', {
+    variableDetectadaEnBundle: isEnvPresent,
+    longitudDetectada: envKey?.length || 0,
+    llaveLimpia: !!firebaseConfig.apiKey,
+    modo: process.env.NODE_ENV
   });
 }
 
@@ -29,12 +30,12 @@ export function initializeFirebase() {
 
   const { apiKey } = firebaseConfig;
 
-  // Validación flexible: empezar con AIza y tener una longitud razonable
+  // Validación: Next.js requiere que la llave esté presente durante el BUILD
   if (!apiKey || !apiKey.startsWith('AIza') || apiKey.length < 35) {
-    console.error('[Firebase] Error Crítico: La API Key no tiene un formato válido.', {
-      detected: apiKey ? `${apiKey.substring(0, 4)}...` : 'vía env',
-      length: apiKey?.length || 0,
-      solucion: 'Verifica que NEXT_PUBLIC_FIREBASE_API_KEY en .env.local empiece con AIza y no tenga comillas.'
+    console.error('[Firebase] ERROR DE CONFIGURACIÓN:', {
+      causa: !apiKey ? 'Variable NEXT_PUBLIC_FIREBASE_API_KEY no detectada' : 'Formato de llave inválido',
+      estado: apiKey ? `Inicia con ${apiKey.substring(0, 4)}... (Largo: ${apiKey.length})` : 'VACÍO',
+      accionRequerida: 'Si estás en Netlify, debes hacer "Trigger deploy" -> "Clear cache and deploy site" para que el bundle incluya las nuevas llaves.'
     });
   }
 
@@ -53,7 +54,7 @@ export function initializeFirebase() {
       firestore: getFirestore(firebaseApp)
     };
   } catch (error) {
-    console.error('[Firebase] Error de inicialización:', error);
+    console.error('[Firebase] Error al inicializar:', error);
     return { firebaseApp: null, auth: null, firestore: null };
   }
 }

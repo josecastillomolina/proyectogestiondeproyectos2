@@ -1,10 +1,13 @@
 /**
- * Configuración de Firebase con limpieza automática de llaves.
- * Elimina espacios, comillas accidentales y maneja valores 'undefined' como cadenas.
+ * Configuración de Firebase con limpieza profunda.
+ * Next.js hornea las variables NEXT_PUBLIC_ durante el build.
  */
 const getCleanEnv = (key: string | undefined) => {
-  if (!key || key === 'undefined' || key === 'null') return '';
-  return key.trim().replace(/['"]/g, '');
+  if (!key || key === 'undefined' || key === 'null' || key.trim() === '') {
+    return '';
+  }
+  // Elimina espacios, comillas simples/dobles y caracteres de control
+  return key.trim().replace(/['"\s]/g, '');
 };
 
 export const firebaseConfig = {
