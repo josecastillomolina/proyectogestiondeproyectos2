@@ -1,7 +1,7 @@
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
@@ -14,6 +14,14 @@ export function initializeFirebase() {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
+  // TAREA 1 — DIAGNÓSTICO INMEDIATO
+  console.table({
+    apiKey_value: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? 'UNDEFINED',
+    apiKey_length: process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.length ?? 0,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? 'UNDEFINED',
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ?? 'UNDEFINED',
+  });
+
   try {
     const firebaseApp = getApps().length === 0 
       ? initializeApp(firebaseConfig) 
@@ -25,7 +33,6 @@ export function initializeFirebase() {
       firestore: getFirestore(firebaseApp)
     };
   } catch (error) {
-    // Aviso silencioso en consola en lugar de error crítico
     console.warn('[Firebase] No se pudo inicializar el servicio. Verifica tus variables en .env.local');
     return { firebaseApp: null, auth: null, firestore: null };
   }
