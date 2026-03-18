@@ -7,38 +7,38 @@ import { getFirestore } from 'firebase/firestore';
 
 /**
  * Diagnóstico Avanzado de API Key.
- * Revela si la llave tiene caracteres ocultos o formato incorrecto.
  */
-const rawKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-
 if (typeof window !== 'undefined') {
-  console.log('[KEY RAW DIAGNOSTIC]', {
-    value: JSON.stringify(rawKey),
-    length: rawKey?.length,
-    start: rawKey?.substring(0, 6),
-    trimmedLength: rawKey?.trim().length,
+  const rawKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  console.log('[Firebase Key Diagnostic]', {
+    hasKey: !!rawKey,
+    length: rawKey?.length || 0,
+    prefix: rawKey?.substring(0, 4),
+    isClean: rawKey === firebaseConfig.apiKey,
+    cleanLength: firebaseConfig.apiKey.length
   });
 }
 
 /**
- * Inicializa los SDKs de Firebase con validación flexible.
+ * Inicializa los SDKs de Firebase.
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
-  const apiKey = firebaseConfig.apiKey;
+  const { apiKey } = firebaseConfig;
+
+  // Validación flexible: empezar con AIza y tener una longitud razonable
+  if (!apiKey || !apiKey.startsWith('AIza') || apiKey.length < 35) {
+    console.error('[Firebase] Error Crítico: La API Key no tiene un formato válido.', {
+      detected: apiKey ? `${apiKey.substring(0, 4)}...` : 'vía env',
+      length: apiKey?.length || 0,
+      solucion: 'Verifica que NEXT_PUBLIC_FIREBASE_API_KEY en .env.local empiece con AIza y no tenga comillas.'
+    });
+  }
 
   try {
-    // Validación flexible: empezar con AIza y tener una longitud razonable (35-45)
-    if (!apiKey || !apiKey.startsWith('AIza') || apiKey.length < 35) {
-      console.error('[Firebase] Error Crítico: La API Key configurada no parece válida.', {
-        keyDetected: apiKey ? `${apiKey.substring(0, 4)}...` : 'null',
-        length: apiKey?.length
-      });
-    }
-
     let firebaseApp: FirebaseApp;
 
     if (!getApps().length) {
