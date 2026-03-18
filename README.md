@@ -1,58 +1,44 @@
+
 # AgendaCitas Nacional CR - Guía de Despliegue
 
-Este proyecto es un portal oficial para la gestión de citas médicas en Costa Rica, construido con **Next.js 15**, **Firebase** y **Tailwind CSS**.
+Este proyecto es un portal oficial para la gestión de citas médicas en Costa Rica.
 
 ## 🛠️ 1. Configuración de Variables de Entorno (IMPORTANTE)
 
-Para que el proyecto funcione en Netlify, debes configurar las siguientes variables en **Netlify (Site settings > Environment variables)**. Si no lo haces, verás errores de `invalid-api-key`.
-
-Copia estos valores desde la consola de Firebase (**Project Settings > General > Your Apps > Web App**):
+Para que el proyecto funcione en Netlify, debes configurar estas variables en **Site settings > Environment variables**:
 
 | Nombre de la Variable | Descripción |
 |----------|-------------|
 | `NEXT_PUBLIC_FIREBASE_API_KEY` | Tu Firebase API Key |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Tu Auth Domain (ej: proyecto.firebaseapp.com) |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Tu Auth Domain |
 | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | El ID de tu proyecto |
-| `NEXT_PUBLIC_FIREBASE_APP_ID` | El ID de la aplicación (1:xxxx:web:xxxx) |
-| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Sender ID de mensajería |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | El ID de la aplicación |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Sender ID |
 
-## 🚀 2. Instrucciones de Subida a GitHub (Terminal)
+## 🚀 2. Instrucciones para subir a GitHub (SOLUCIÓN AL BLOQUEO)
 
-Ejecuta estos comandos en orden para subir tu código corregido:
+Si el `git push` se quedaba pegado, era porque intentabas subir la carpeta `node_modules`. Con el nuevo `.gitignore` que he creado, ahora funcionará rápido:
 
-1. **Limpiar Git anterior**:
+1. **Limpiar cache de Git**:
    ```bash
-   rm -rf .git
+   git rm -r --cached .
    ```
 
-2. **Iniciar repositorio**:
-   ```bash
-   git init
-   ```
-
-3. **Añadir archivos**:
+2. **Añadir archivos (ahora respetará el .gitignore)**:
    ```bash
    git add .
    ```
 
-4. **Primer commit**:
+3. **Hacer commit**:
    ```bash
-   git commit -m "🚀 Fix: Robust Firebase initialization for Netlify"
+   git commit -m "🚀 Fix: Add .gitignore and secure Firebase config"
    ```
 
-5. **Conectar a tu repositorio**:
+4. **Subir a GitHub**:
    ```bash
-   git remote add origin https://github.com/josecastillomolina/agendadecitas.git
-   ```
-
-6. **Subir cambios**:
-   ```bash
-   git branch -M main
-   git push -u origin main --force
+   git push origin main --force
    ```
 
 ## 🌐 3. Configuración en Netlify
-
-1. Ve a **Deploys > Trigger deploy** una vez que hayas configurado las variables en el paso 1.
-2. El **Build Command** debe ser `npm run build`.
-3. El **Publish Directory** debe ser `.next`.
+- **Build Command**: `npm run build`
+- **Publish Directory**: `.next`
