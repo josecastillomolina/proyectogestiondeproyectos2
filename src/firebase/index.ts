@@ -1,41 +1,31 @@
 
 'use client';
 
-import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { firebaseConfig } from './config';
 
 /**
- * Inicializa los SDKs de Firebase de forma segura en el cliente.
+ * Inicializa Firebase de forma limpia y directa.
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
-  // Log de diagnóstico silencioso para verificar la carga de la llave en el navegador
-  const key = firebaseConfig.apiKey;
-  console.log('[Firebase Init]', {
-    loaded: !!key,
-    prefix: key ? key.substring(0, 4) : 'none',
-    project: firebaseConfig.projectId
-  });
+  // Log de diagnóstico simple
+  console.log('[Firebase Init] API Key detectada:', !!firebaseConfig.apiKey);
 
-  try {
-    const firebaseApp = getApps().length === 0 
-      ? initializeApp(firebaseConfig) 
-      : getApp();
+  const firebaseApp = getApps().length === 0 
+    ? initializeApp(firebaseConfig) 
+    : getApp();
 
-    return {
-      firebaseApp,
-      auth: getAuth(firebaseApp),
-      firestore: getFirestore(firebaseApp)
-    };
-  } catch (error) {
-    console.warn('[Firebase] Fallo al inicializar SDK:', error);
-    return { firebaseApp: null, auth: null, firestore: null };
-  }
+  return {
+    firebaseApp,
+    auth: getAuth(firebaseApp),
+    firestore: getFirestore(firebaseApp)
+  };
 }
 
 export * from './provider';
