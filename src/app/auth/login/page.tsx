@@ -36,7 +36,6 @@ export default function Login() {
     if (isLoading) return;
     setErrorMessage(null);
 
-    // Protección contra valores undefined o nulos (Fix trimEnd)
     const email = (formData.email ?? '').trim();
     const password = (formData.password ?? '').trim();
 
@@ -46,7 +45,7 @@ export default function Login() {
     }
 
     if (!auth) {
-      setErrorMessage("El servicio de autenticación no está disponible. Verifica tu conexión.");
+      setErrorMessage("El servicio de autenticación no está disponible.");
       return;
     }
 
@@ -63,8 +62,6 @@ export default function Login() {
         friendlyError = "Correo electrónico o contraseña incorrectos.";
       } else if (error.code === 'auth/too-many-requests') {
         friendlyError = "Demasiados intentos fallidos. Intenta más tarde.";
-      } else if (error.code === 'auth/api-key-not-valid' || error.code === 'auth/invalid-api-key') {
-        friendlyError = "Error de configuración: API Key no válida.";
       } else {
         friendlyError = error.message || "Error al intentar ingresar.";
       }
@@ -79,7 +76,7 @@ export default function Login() {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow flex items-center justify-center py-20 bg-accent/10 px-4">
-        <Card className="w-full max-w-md shadow-2xl rounded-3xl border-none overflow-hidden">
+        <Card className="w-full max-md shadow-2xl rounded-3xl border-none overflow-hidden">
           <CardHeader className="space-y-2 text-center pb-8 pt-10">
             <div className="mx-auto bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
               <LogIn className="h-8 w-8 text-primary" />

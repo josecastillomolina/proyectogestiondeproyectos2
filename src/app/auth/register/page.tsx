@@ -47,7 +47,6 @@ export default function Register() {
     if (isLoading) return;
     setErrorMessage(null);
 
-    // Protección contra valores undefined o nulos (Fix trimEnd)
     const email = (formData.email ?? '').trim();
     const password = (formData.password ?? '').trim();
     const idNumber = (formData.idNumber ?? '').trim();
@@ -68,7 +67,7 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      // 1. Intentar verificar si la cédula existe (Opcional si Firestore falla)
+      // 1. Verificar ID en Firestore (Opcional si falla por conexión)
       if (db) {
         try {
           const idRef = doc(db, 'identifications', idNumber);
@@ -79,25 +78,23 @@ export default function Register() {
             return;
           }
         } catch (dbError: any) {
-          console.warn("[Firestore] Error al verificar ID:", dbError.message);
-          // Si el error es 'unavailable', avisamos pero podemos intentar seguir solo con Auth si se desea,
-          // aunque para un expediente médico Firestore es crítico.
-          if (dbError.code === 'unavailable') {
-            setErrorMessage("El servidor de base de datos no responde. Asegúrate de haber creado Firestore en tu consola.");
-            setIsLoading(false);
-            return;
+          // Si Firestore no está listo, solo avisamos en consola y seguimos
+          if (dbError.code === 'unavailable' || dbError.code === 'failed-precondition' || dbError.code === 'permission-denied') {
+            console.warn("[Firestore] No se pudo verificar la cédula (DB no disponible), continuando registro en Auth...");
+          } else {
+            console.error("[Firestore Error]", dbError);
           }
         }
       }
 
-      // 2. Crear usuario en Auth
+      // 2. Crear usuario en Auth (Flujo principal)
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
 
       // 3. Actualizar perfil de Auth
       await updateProfile(firebaseUser, { displayName: fullName });
 
-      // 4. Intentar guardar en Firestore
+      // 4. Intentar guardar en Firestore (Opcional)
       if (db) {
         try {
           const [firstName = '', ...lastNameParts] = fullName.split(' ');
@@ -119,8 +116,12 @@ export default function Register() {
             allergies: 'Ninguna reportada'
           });
         } catch (fsError: any) {
-          console.error("[Firestore] Error al crear expediente:", fsError.message);
-          toast({ title: "Cuenta creada", description: "Tu cuenta de acceso está lista, pero el expediente clínico digital falló al guardarse.", variant: "destructive" });
+          // Silencioso en la UI si es por falta de DB, ruidoso solo en consola
+          if (fsError.code === 'unavailable' || fsError.code === 'failed-precondition' || fsError.code === 'permission-denied') {
+             console.warn("[Firestore] Registro exitoso en Auth, pero el expediente clínico no pudo crearse porque la base de datos no está lista.");
+          } else {
+             console.error("[Firestore Save Error]", fsError);
+          }
         }
       }
 
