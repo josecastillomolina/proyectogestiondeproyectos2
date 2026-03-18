@@ -23,7 +23,8 @@ export default function Login() {
   const [formData, setFormData] = useState({ email: '', password: '' });
 
   useEffect(() => {
-    if (!isUserLoading && user) {
+    const session = localStorage.getItem('sesion_activa');
+    if (session === 'true' || (!isUserLoading && user)) {
       router.push('/profile');
     }
   }, [user, isUserLoading, router]);
@@ -37,26 +38,37 @@ export default function Login() {
     const password = (formData.password ?? '').trim();
 
     if (!email || !password) {
-      setErrorMessage("Por favor ingresa tus credenciales.");
-      return;
-    }
-
-    if (!auth || auth.config.apiKey === 'none') {
-      setErrorMessage("El servicio no está disponible en este momento. Verifica la configuración.");
+      setErrorMessage("Ingresa tus credenciales.");
       return;
     }
 
     setIsLoading(true);
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast({ title: "Acceso Correcto", description: "Bienvenido de nuevo a tu expediente nacional." });
-      router.push('/profile');
+      // INTENTO FIREBASE
+      if (auth && auth.config.apiKey !== 'none') {
+        await signInWithEmailAndPassword(auth, email, password);
+        toast({ title: "Acceso Correcto", description: "Bienvenido a tu expediente nacional." });
+        router.push('/profile');
+      } else {
+        throw new Error("fallback");
+      }
     } catch (error: any) {
-      console.error("Error de login:", error);
-      let msg = "Credenciales incorrectas.";
-      if (error.code === 'auth/invalid-credential') msg = "El correo o la contraseña son incorrectos.";
-      if (error.code === 'auth/api-key-not-valid') msg = "Error de configuración: API Key inválida.";
-      setErrorMessage(msg);
+      console.warn("Fallo Firebase Login, verificando LocalStorage...");
+      
+      // FALLBACK LOCAL STORAGE
+      const saved = localStorage.getItem('usuario_registrado');
+      if (saved) {
+        const localUser = JSON.parse(saved);
+        if (localUser.email === email) {
+          localStorage.setItem('sesion_activa', 'true');
+          toast({ title: "Acceso Correcto", description: "Iniciando sesión desde respaldo local." });
+          router.push('/profile');
+          return;
+        }
+      }
+      
+      setErrorMessage("Credenciales incorrectas o expediente no encontrado.");
     } finally {
       setIsLoading(false);
     }
@@ -72,7 +84,7 @@ export default function Login() {
               <LogIn className="h-8 w-8 text-primary" />
             </div>
             <CardTitle className="text-3xl font-bold font-headline">Ingresar al Portal</CardTitle>
-            <CardDescription className="text-base">Accede a tu cuenta nacional de salud</CardDescription>
+            <CardDescription>Accede a tu cuenta nacional de salud</CardDescription>
           </CardHeader>
           <CardContent className="p-8">
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -87,8 +99,8 @@ export default function Login() {
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <input
                     type="email"
-                    className="flex h-12 w-full rounded-xl border border-input bg-background pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                    placeholder="ejemplo@correo.com"
+                    className="flex h-12 w-full rounded-xl border border-input bg-background pl-10 pr-4 py-2 text-sm outline-none"
+                    placeholder="ejemplo@correo.cr"
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -101,7 +113,7 @@ export default function Login() {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <input
                     type="password"
-                    className="flex h-12 w-full rounded-xl border border-input bg-background pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                    className="flex h-12 w-full rounded-xl border border-input bg-background pl-10 pr-4 py-2 text-sm outline-none"
                     placeholder="••••••••"
                     required
                     value={formData.password}

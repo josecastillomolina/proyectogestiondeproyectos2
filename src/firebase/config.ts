@@ -15,15 +15,14 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
-// Verificamos si la configuración es mínima para intentar inicializar
-const hasConfig = !!firebaseConfig.apiKey && firebaseConfig.apiKey !== 'undefined';
+// Detección robusta de configuración
+const isConfigValid = firebaseConfig.apiKey && firebaseConfig.apiKey !== 'undefined';
 
 if (!getApps().length) {
-  if (hasConfig) {
+  if (isConfigValid) {
     app = initializeApp(firebaseConfig);
   } else {
-    // Si no hay configuración, inicializamos un app vacío para evitar crashes inmediatos
-    // pero marcamos que no es un app funcional para Auth/Firestore real
+    // Inicialización dummy para evitar que la app explote si no hay .env
     app = initializeApp({ apiKey: "none", projectId: "none" });
   }
 } else {
