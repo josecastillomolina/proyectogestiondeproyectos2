@@ -12,21 +12,21 @@ export function Navbar() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const router = useRouter();
-  const [isLocalSession, setIsLocalSession] = useState(false);
+  const [activeEmail, setActiveEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    const session = localStorage.getItem('sesion_activa');
-    setIsLocalSession(session === 'true');
+    const email = localStorage.getItem('sesion_activa_email');
+    setActiveEmail(email);
   }, [user]);
 
   const handleSignOut = async () => {
     if (auth) await signOut(auth);
-    localStorage.removeItem('sesion_activa');
-    setIsLocalSession(false);
+    localStorage.removeItem('sesion_activa_email');
+    setActiveEmail(null);
     router.push('/');
   };
 
-  const isLoggedIn = user || isLocalSession;
+  const isLoggedIn = user || activeEmail;
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -61,7 +61,7 @@ export function Navbar() {
                     <LogIn className="h-4 w-4" /> Ingresar
                   </Link>
                 </Button>
-                <Button asChild variant="default" size="sm" className="hidden sm:flex bg-primary hover:bg-primary/90 rounded-full font-bold px-6 shadow-md shadow-primary/20">
+                <Button asChild variant="default" size="sm" className="hidden sm:flex bg-primary hover:bg-primary/90 rounded-full font-bold px-6">
                   <Link href="/auth/register">Registrarse</Link>
                 </Button>
               </>

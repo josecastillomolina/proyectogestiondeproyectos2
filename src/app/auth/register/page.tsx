@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { User, Mail, Lock, Phone, CreditCard, Flag, ArrowLeft, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { User, Mail, Lock, Phone, CreditCard, Loader2, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirestore } from '@/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
@@ -40,8 +40,12 @@ export default function Register() {
       uid: 'local-' + Date.now(),
       createdAt: new Date().toISOString()
     };
+    // Guardar perfil específico por email para privacidad
+    localStorage.setItem(`perfil_${data.email}`, JSON.stringify(userPayload));
+    // Guardar sesión activa por email
+    localStorage.setItem('sesion_activa_email', data.email);
+    // Compatibilidad con login general
     localStorage.setItem('usuario_registrado', JSON.stringify(userPayload));
-    localStorage.setItem('sesion_activa', 'true');
     return userPayload;
   };
 
@@ -57,29 +61,28 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      // INTENTO OPCIÓN A: Firebase Completo
+      // Intento Firebase Auth
       if (auth && auth.config.apiKey !== 'none') {
-        const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-        await updateProfile(userCredential.user, { displayName: formData.fullName });
-
         try {
+          const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+          await updateProfile(userCredential.user, { displayName: formData.fullName });
+
           if (db) {
             await setDoc(doc(db, 'users', userCredential.user.uid), {
-              fullName: formData.fullName,
-              username: formData.username,
-              identificationType: formData.idType,
-              idNumber: formData.idNumber,
-              email: formData.email,
-              phoneNumber: formData.phone,
+              ...formData,
               createdAt: serverTimestamp()
             });
           }
-        } catch (dbErr) {
-          console.warn("[Firestore] No disponible, guardando copia local...");
-          saveToLocalStorage(formData);
+        } catch (fbErr: any) {
+          // Si el error es de API Key, procedemos en modo local silenciosamente
+          if (fbErr.code?.includes('api-key-not-valid') || fbErr.message?.includes('api-key-not-valid')) {
+            console.warn("[Auth] API Key inválida detectada, usando respaldo local.");
+            saveToLocalStorage(formData);
+          } else {
+            throw fbErr;
+          }
         }
       } else {
-        // OPCIÓN C: LocalStorage directo si Auth no tiene API Key
         saveToLocalStorage(formData);
       }
 
@@ -91,8 +94,7 @@ export default function Register() {
       }, 2000);
 
     } catch (error: any) {
-      console.error("Fallo en Firebase, aplicando Opción C (LocalStorage):", error);
-      // CAÍDA A OPCIÓN C: Fallo total de Firebase
+      console.warn("Fallo en Firebase Auth, aplicando Opción Local:", error);
       saveToLocalStorage(formData);
       setIsSuccess(true);
       setTimeout(() => {
@@ -113,7 +115,7 @@ export default function Register() {
               <CheckCircle2 className="h-12 w-12" />
             </div>
             <h1 className="text-3xl font-bold font-headline">¡Registro Exitoso!</h1>
-            <p className="text-muted-foreground">Tu expediente nacional ha sido creado. Redirigiendo en unos segundos...</p>
+            <p className="text-muted-foreground">Tu expediente nacional ha sido creado correctamente.</p>
             <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary/50" />
           </Card>
         </main>

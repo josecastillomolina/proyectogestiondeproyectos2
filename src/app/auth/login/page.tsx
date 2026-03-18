@@ -23,8 +23,8 @@ export default function Login() {
   const [formData, setFormData] = useState({ email: '', password: '' });
 
   useEffect(() => {
-    const session = localStorage.getItem('sesion_activa');
-    if (session === 'true' || (!isUserLoading && user)) {
+    const sessionEmail = localStorage.getItem('sesion_activa_email');
+    if (sessionEmail || (!isUserLoading && user)) {
       router.push('/profile');
     }
   }, [user, isUserLoading, router]);
@@ -45,23 +45,31 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // INTENTO FIREBASE
       if (auth && auth.config.apiKey !== 'none') {
-        await signInWithEmailAndPassword(auth, email, password);
-        toast({ title: "Acceso Correcto", description: "Bienvenido a tu expediente nacional." });
-        router.push('/profile');
+        try {
+          await signInWithEmailAndPassword(auth, email, password);
+          localStorage.setItem('sesion_activa_email', email);
+          toast({ title: "Acceso Correcto", description: "Bienvenido a tu expediente nacional." });
+          router.push('/profile');
+        } catch (fbErr: any) {
+          if (fbErr.code?.includes('api-key-not-valid') || fbErr.message?.includes('api-key-not-valid')) {
+            // Continuar con validación local silenciosamente
+            console.warn("[Auth] API Key inválida, validando localmente.");
+            throw new Error("fallback");
+          } else {
+            throw fbErr;
+          }
+        }
       } else {
         throw new Error("fallback");
       }
     } catch (error: any) {
-      console.warn("Fallo Firebase Login, verificando LocalStorage...");
-      
-      // FALLBACK LOCAL STORAGE
-      const saved = localStorage.getItem('usuario_registrado');
-      if (saved) {
-        const localUser = JSON.parse(saved);
+      // VALIDACIÓN LOCAL AISLADA
+      const savedProfile = localStorage.getItem(`perfil_${email}`);
+      if (savedProfile) {
+        const localUser = JSON.parse(savedProfile);
         if (localUser.email === email) {
-          localStorage.setItem('sesion_activa', 'true');
+          localStorage.setItem('sesion_activa_email', email);
           toast({ title: "Acceso Correcto", description: "Iniciando sesión desde respaldo local." });
           router.push('/profile');
           return;
