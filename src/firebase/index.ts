@@ -11,42 +11,44 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
     return {
-      firebaseApp: null as any,
-      auth: null as any,
-      firestore: null as any,
+      firebaseApp: null,
+      auth: null,
+      firestore: null,
     };
   }
 
   // Pre-check: If API Key is missing, return nulls safely instead of crashing later
   if (!firebaseConfig.apiKey) {
-    console.warn('⚠️ Firebase: NEXT_PUBLIC_FIREBASE_API_KEY is missing. Check your environment variables.');
+    console.warn('⚠️ Firebase: NEXT_PUBLIC_FIREBASE_API_KEY is missing. Check your Netlify environment variables.');
     return {
-      firebaseApp: null as any,
-      auth: null as any,
-      firestore: null as any,
+      firebaseApp: null,
+      auth: null,
+      firestore: null,
     };
   }
 
+  let firebaseApp: FirebaseApp;
+
   if (!getApps().length) {
-    let firebaseApp: FirebaseApp;
     try {
       firebaseApp = initializeApp(firebaseConfig);
     } catch (e) {
       console.error('Firebase initialization error:', e);
       return {
-        firebaseApp: null as any,
-        auth: null as any,
-        firestore: null as any,
+        firebaseApp: null,
+        auth: null,
+        firestore: null,
       };
     }
-    return getSdks(firebaseApp);
+  } else {
+    firebaseApp = getApp();
   }
 
-  return getSdks(getApp());
+  return getSdks(firebaseApp);
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
-  if (!firebaseApp) return { firebaseApp: null as any, auth: null as any, firestore: null as any };
+  if (!firebaseApp) return { firebaseApp: null, auth: null, firestore: null };
   
   try {
     return {
@@ -55,11 +57,11 @@ export function getSdks(firebaseApp: FirebaseApp) {
       firestore: getFirestore(firebaseApp)
     };
   } catch (e) {
-    console.error("⚠️ Firebase: Error initializing services (check API Key):", e);
+    console.error("⚠️ Firebase: Error initializing services:", e);
     return {
       firebaseApp,
-      auth: null as any,
-      firestore: null as any
+      auth: null,
+      firestore: null
     };
   }
 }

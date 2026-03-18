@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { LogIn, Lock, ArrowLeft, Loader2, Mail } from 'lucide-react';
+import { LogIn, Lock, ArrowLeft, Loader2, Mail, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -18,7 +18,7 @@ export default function Login() {
   const router = useRouter();
   const { toast } = useToast();
   const auth = useAuth();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -26,14 +26,25 @@ export default function Login() {
   });
 
   useEffect(() => {
-    if (user) {
+    if (!isUserLoading && user) {
       router.push('/profile');
     }
-  }, [user, router]);
+  }, [user, isUserLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLoading) return;
+
+    // Diagnóstico: Verificar si Firebase Auth está inicializado
+    if (!auth) {
+      toast({
+        title: "Error de Conexión",
+        description: "El servicio de autenticación no está disponible. Verifica las variables de entorno en Netlify.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -50,6 +61,8 @@ export default function Login() {
         errorMessage = "El correo o la contraseña no coinciden.";
       } else if (error.code === 'auth/too-many-requests') {
         errorMessage = "Cuenta bloqueada temporalmente por exceso de intentos.";
+      } else if (error.code === 'auth/invalid-api-key') {
+        errorMessage = "Configuración de API inválida. Contacte al administrador.";
       }
 
       toast({
@@ -77,6 +90,12 @@ export default function Login() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {!auth && !isUserLoading && (
+              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3 text-destructive text-sm">
+                <AlertCircle className="h-5 w-5 shrink-0" />
+                <p>El sistema no detecta las llaves de acceso de Firebase. Por favor configúralas en Netlify.</p>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email">Correo Electrónico</Label>
@@ -88,6 +107,7 @@ export default function Login() {
                     placeholder="ejemplo@correo.com" 
                     className="pl-10 h-11 rounded-xl" 
                     required 
+                    autoComplete="email"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                   />
@@ -107,6 +127,7 @@ export default function Login() {
                     placeholder="••••••••" 
                     className="pl-10 h-11 rounded-xl" 
                     required 
+                    autoComplete="current-password"
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                   />
@@ -114,7 +135,11 @@ export default function Login() {
               </div>
 
               <div className="flex flex-col gap-3 pt-4">
-                <Button type="submit" className="w-full h-12 text-lg rounded-full shadow-lg shadow-primary/20" disabled={isLoading}>
+                <Button 
+                  type="submit" 
+                  className="w-full h-12 text-lg rounded-full shadow-lg shadow-primary/20" 
+                  disabled={isLoading || (!auth && !isUserLoading)}
+                >
                   {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Ingresar al Sistema"}
                 </Button>
                 <Button type="button" variant="ghost" className="w-full rounded-full" onClick={() => router.push('/')}>

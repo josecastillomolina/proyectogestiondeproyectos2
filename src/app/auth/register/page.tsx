@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
@@ -11,9 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Mail, Lock, Phone, ArrowLeft, Loader2, CreditCard, Flag } from 'lucide-react';
+import { User, Mail, Lock, Phone, ArrowLeft, Loader2, CreditCard, Flag, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, serverTimestamp, getDoc, setDoc } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -23,6 +22,7 @@ export default function Register() {
   const { toast } = useToast();
   const auth = useAuth();
   const db = useFirestore();
+  const { user, isUserLoading } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
@@ -34,17 +34,43 @@ export default function Register() {
     idNumber: ''
   });
 
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.push('/profile');
+    }
+  }, [user, isUserLoading, router]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoading || !db || !auth) return;
+    if (isLoading) return;
+
+    // Diagnóstico: Verificar disponibilidad de servicios
+    if (!auth || !db) {
+      toast({
+        title: "Error de Configuración",
+        description: "Los servicios de salud digitales no están disponibles en este momento.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.identificationType) {
+      toast({
+        title: "Dato Requerido",
+        description: "Por favor selecciona el tipo de identificación.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // 1. Verificar unicidad de cédula en Costa Rica
+      // 1. Verificar unicidad de cédula
       const idRef = doc(db, 'identifications', formData.idNumber);
       const idSnap = await getDoc(idRef);
 
@@ -60,17 +86,17 @@ export default function Register() {
 
       // 2. Crear cuenta de autenticación
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-      const user = userCredential.user;
+      const firebaseUser = userCredential.user;
 
       const [firstName, ...lastNameParts] = formData.fullName.split(' ');
       const lastName = lastNameParts.join(' ');
 
       // 3. Registrar el ID como ocupado
-      await setDoc(idRef, { userId: user.uid });
+      await setDoc(idRef, { userId: firebaseUser.uid });
 
       // 4. Crear el perfil de usuario
-      setDocumentNonBlocking(doc(db, 'users', user.uid), {
-        id: user.uid,
+      setDocumentNonBlocking(doc(db, 'users', firebaseUser.uid), {
+        id: firebaseUser.uid,
         username: formData.username,
         firstName: firstName || '',
         lastName: lastName || '',
@@ -95,6 +121,8 @@ export default function Register() {
         errorMessage = "Este correo electrónico ya está registrado.";
       } else if (error.code === 'auth/weak-password') {
         errorMessage = "La contraseña debe ser más robusta (mínimo 6 caracteres).";
+      } else {
+        errorMessage = error.message || errorMessage;
       }
       
       toast({
@@ -117,6 +145,12 @@ export default function Register() {
              <p className="text-white/80 text-sm">Crea tu expediente digital unificado</p>
           </div>
           <CardContent className="p-8">
+            {(!auth || !db) && !isUserLoading && (
+              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3 text-destructive text-sm">
+                <AlertCircle className="h-5 w-5 shrink-0" />
+                <p>Configuración de Firebase incompleta. Verifica las variables NEXT_PUBLIC_ en Netlify.</p>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -129,6 +163,7 @@ export default function Register() {
                       placeholder="Según su documento" 
                       className="pl-10 h-11 rounded-xl" 
                       required 
+                      autoComplete="name"
                       value={formData.fullName}
                       onChange={handleChange}
                     />
@@ -145,6 +180,7 @@ export default function Register() {
                       placeholder="usuario123" 
                       className="pl-10 h-11 rounded-xl" 
                       required 
+                      autoComplete="username"
                       value={formData.username}
                       onChange={handleChange}
                     />
@@ -198,6 +234,7 @@ export default function Register() {
                       placeholder="correo@ejemplo.cr" 
                       className="pl-10 h-11 rounded-xl" 
                       required 
+                      autoComplete="email"
                       value={formData.email}
                       onChange={handleChange}
                     />
@@ -215,6 +252,7 @@ export default function Register() {
                       placeholder="8888-8888" 
                       className="pl-10 h-11 rounded-xl" 
                       required 
+                      autoComplete="tel"
                       value={formData.phone}
                       onChange={handleChange}
                     />
@@ -232,6 +270,7 @@ export default function Register() {
                       placeholder="Mínimo 6 caracteres" 
                       className="pl-10 h-11 rounded-xl" 
                       required 
+                      autoComplete="new-password"
                       value={formData.password}
                       onChange={handleChange}
                     />
@@ -240,7 +279,11 @@ export default function Register() {
               </div>
 
               <div className="flex flex-col gap-3 pt-6">
-                <Button type="submit" className="w-full h-12 text-lg rounded-full shadow-lg shadow-primary/20" disabled={isLoading}>
+                <Button 
+                  type="submit" 
+                  className="w-full h-12 text-lg rounded-full shadow-lg shadow-primary/20" 
+                  disabled={isLoading || (!auth && !isUserLoading)}
+                >
                   {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Registrar Expediente Nacional"}
                 </Button>
                 <Button type="button" variant="ghost" className="w-full rounded-full" onClick={() => router.push('/')}>
