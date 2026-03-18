@@ -7,14 +7,16 @@ import { getFirestore } from 'firebase/firestore';
 
 /**
  * Diagnóstico seguro de configuración.
+ * Verifica si las variables existen sin exponer sus valores.
  */
 export function checkConfig() {
   if (typeof window === 'undefined') return {};
   return {
-    hasApiKey: !!firebaseConfig.apiKey && firebaseConfig.apiKey.length > 5,
-    hasProjectId: !!firebaseConfig.projectId,
-    hasAppId: !!firebaseConfig.appId,
-    env: process.env.NODE_ENV
+    apiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: !!process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    appId: !!process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    messagingSenderId: !!process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   };
 }
 
@@ -26,14 +28,14 @@ export function initializeFirebase() {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
-  // Log de diagnóstico para el desarrollador (Visible en consola F12)
-  console.log('[Firebase Diagnostic]', checkConfig());
+  // Log de diagnóstico visible en la consola del navegador (F12)
+  console.log('[Firebase Config Diagnostic]', checkConfig());
 
   try {
     let firebaseApp: FirebaseApp;
 
     if (!getApps().length) {
-      // Si la API Key no es válida (ej. undefined o muy corta), Firebase lanzará un error al inicializar
+      // Intentar inicializar. Si los valores son undefined, fallará aquí o en el primer uso.
       firebaseApp = initializeApp(firebaseConfig);
     } else {
       firebaseApp = getApp();
@@ -45,7 +47,7 @@ export function initializeFirebase() {
       firestore: getFirestore(firebaseApp)
     };
   } catch (error) {
-    console.error('[Firebase] Error de inicialización crítica:', error);
+    console.error('[Firebase] Error crítico de inicialización:', error);
     return { firebaseApp: null, auth: null, firestore: null };
   }
 }

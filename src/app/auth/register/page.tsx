@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { User, Mail, Lock, Phone, ArrowLeft, Loader2, CreditCard, AlertCircle, Info } from 'lucide-react';
+import { User, Mail, Lock, Phone, ArrowLeft, Loader2, CreditCard, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -49,8 +49,9 @@ export default function Register() {
     if (isLoading) return;
     setErrorMessage(null);
 
-    if (!auth || !db) {
-      setErrorMessage("Firebase no está configurado correctamente. Realiza un 'Deploy project without cache' en Netlify.");
+    // Verificación de configuración antes de intentar registrar
+    if (!auth || !db || !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+      setErrorMessage("Configuración ausente. Por favor, ve a Netlify y haz clic en 'Deploy project without cache' para activar las llaves.");
       return;
     }
 
@@ -98,19 +99,14 @@ export default function Register() {
       
       let friendlyMessage = "No se pudo completar el registro.";
       
-      // Mapeo de errores específicos para guiar al usuario/admin
       if (error.code?.includes('api-key-not-valid')) {
-        friendlyMessage = "Configuración de acceso inválida (API Key). Por favor, revisa tus variables en Netlify y realiza un 'Deploy project without cache'.";
+        friendlyMessage = "Llave API inválida. Ve a Netlify y realiza un 'Deploy project without cache' para que el sistema reconozca tus llaves.";
       } else if (error.code === 'auth/email-already-in-use') {
         friendlyMessage = "Este correo ya está en uso.";
-      } else if (error.code === 'auth/weak-password') {
-        friendlyMessage = "La contraseña es muy débil (mínimo 6 caracteres).";
       } else if (error.code === 'auth/network-request-failed') {
-        friendlyMessage = "Fallo de conexión. Verifica que las llaves de Firebase en Netlify sean correctas.";
-      } else if (error.message?.includes('offline')) {
-        friendlyMessage = "El sistema no pudo conectar con los servidores nacionales de salud. Verifica tu conexión.";
+        friendlyMessage = "Error de red. Asegúrate de que las llaves en Netlify no tengan espacios.";
       } else {
-        friendlyMessage = `Error (${error.code || 'desconocido'}): ${error.message}`;
+        friendlyMessage = `Error: ${error.message}`;
       }
 
       setErrorMessage(friendlyMessage);
