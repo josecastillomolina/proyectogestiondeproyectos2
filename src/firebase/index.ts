@@ -6,39 +6,23 @@ import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 
 /**
- * Initializes Firebase SDKs with safety checks for SSR and missing configuration.
+ * Inicializa los SDKs de Firebase con verificaciones de seguridad.
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
-    return {
-      firebaseApp: null,
-      auth: null,
-      firestore: null,
-    };
-  }
-
-  // Pre-check: If API Key is missing, return nulls safely instead of crashing later
-  if (!firebaseConfig.apiKey) {
-    console.warn('⚠️ Firebase: NEXT_PUBLIC_FIREBASE_API_KEY is missing. Check your Netlify environment variables.');
-    return {
-      firebaseApp: null,
-      auth: null,
-      firestore: null,
-    };
+    return { firebaseApp: null, auth: null, firestore: null };
   }
 
   let firebaseApp: FirebaseApp;
 
+  // Si no hay API Key, intentamos inicializar pero fallará de forma controlada en los servicios
   if (!getApps().length) {
     try {
       firebaseApp = initializeApp(firebaseConfig);
     } catch (e) {
-      console.error('Firebase initialization error:', e);
-      return {
-        firebaseApp: null,
-        auth: null,
-        firestore: null,
-      };
+      console.error('Error crítico al inicializar Firebase:', e);
+      // Retornamos nulos para que los hooks manejen el estado de "no disponible"
+      return { firebaseApp: null, auth: null, firestore: null };
     }
   } else {
     firebaseApp = getApp();
@@ -57,7 +41,7 @@ export function getSdks(firebaseApp: FirebaseApp) {
       firestore: getFirestore(firebaseApp)
     };
   } catch (e) {
-    console.error("⚠️ Firebase: Error initializing services:", e);
+    // Si falla aquí es probablemente por llaves inválidas o faltantes
     return {
       firebaseApp,
       auth: null,

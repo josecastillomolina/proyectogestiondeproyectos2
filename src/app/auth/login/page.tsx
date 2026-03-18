@@ -35,11 +35,10 @@ export default function Login() {
     e.preventDefault();
     if (isLoading) return;
 
-    // Diagnóstico: Verificar si Firebase Auth está inicializado
     if (!auth) {
       toast({
-        title: "Error de Conexión",
-        description: "El servicio de autenticación no está disponible. Verifica las variables de entorno en Netlify.",
+        title: "Servicio no disponible",
+        description: "El portal de salud no puede conectar con la base de datos nacional. Verifica la configuración en Netlify.",
         variant: "destructive"
       });
       return;
@@ -56,15 +55,9 @@ export default function Login() {
       router.push('/profile');
     } catch (error: any) {
       let errorMessage = "Credenciales incorrectas. Inténtalo de nuevo.";
+      if (error.code === 'auth/invalid-credential') errorMessage = "El correo o la contraseña son incorrectos.";
+      else if (error.code === 'auth/too-many-requests') errorMessage = "Demasiados intentos. Espera unos minutos.";
       
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-        errorMessage = "El correo o la contraseña no coinciden.";
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = "Cuenta bloqueada temporalmente por exceso de intentos.";
-      } else if (error.code === 'auth/invalid-api-key') {
-        errorMessage = "Configuración de API inválida. Contacte al administrador.";
-      }
-
       toast({
         title: "Error de Acceso",
         description: errorMessage,
@@ -91,9 +84,9 @@ export default function Login() {
           </CardHeader>
           <CardContent>
             {!auth && !isUserLoading && (
-              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3 text-destructive text-sm">
+              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-amber-800 text-sm">
                 <AlertCircle className="h-5 w-5 shrink-0" />
-                <p>El sistema no detecta las llaves de acceso de Firebase. Por favor configúralas en Netlify.</p>
+                <p>El sistema está en modo de espera. Si ya configuraste las variables en Netlify, el acceso se habilitará en segundos.</p>
               </div>
             )}
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -101,13 +94,12 @@ export default function Login() {
                 <Label htmlFor="email">Correo Electrónico</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    id="email" 
+                  <input
+                    id="email"
                     type="email"
-                    placeholder="ejemplo@correo.com" 
-                    className="pl-10 h-11 rounded-xl" 
-                    required 
-                    autoComplete="email"
+                    className="flex h-11 w-full rounded-xl border border-input bg-background pl-10 pr-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="ejemplo@correo.com"
+                    required
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                   />
@@ -117,17 +109,15 @@ export default function Login() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Contraseña</Label>
-                  <Link href="#" className="text-xs text-primary hover:underline">¿Olvidaste tu contraseña?</Link>
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    id="password" 
-                    type="password" 
-                    placeholder="••••••••" 
-                    className="pl-10 h-11 rounded-xl" 
-                    required 
-                    autoComplete="current-password"
+                  <input
+                    id="password"
+                    type="password"
+                    className="flex h-11 w-full rounded-xl border border-input bg-background pl-10 pr-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="••••••••"
+                    required
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                   />
@@ -138,7 +128,7 @@ export default function Login() {
                 <Button 
                   type="submit" 
                   className="w-full h-12 text-lg rounded-full shadow-lg shadow-primary/20" 
-                  disabled={isLoading || (!auth && !isUserLoading)}
+                  disabled={isLoading}
                 >
                   {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Ingresar al Sistema"}
                 </Button>
