@@ -3,8 +3,9 @@
  */
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, terminate } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 
+// Valores sincronizados con el proyecto agendacitas-nacional
 export const firebaseConfig = {
   apiKey: "AIzaSyDF6Yyl1TYkBBIKdWY_dcvki1F6eLiOuZA",
   authDomain: "agendacitas-nacional.firebaseapp.com",

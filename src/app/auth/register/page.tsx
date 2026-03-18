@@ -49,40 +49,47 @@ export default function Register() {
     setErrorMessage(null);
 
     if (!auth || !db) {
-      setErrorMessage("Los servicios de Firebase no están listos. Verifica la configuración.");
+      setErrorMessage("Servicios no disponibles. Verifica tu conexión.");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // 1. Verificar si la cédula ya existe en la red nacional
+      // 1. Verificar si la cédula ya existe
       const idRef = doc(db, 'identifications', formData.idNumber);
-      const idSnap = await getDoc(idRef);
+      let idSnap;
+      
+      try {
+        idSnap = await getDoc(idRef);
+      } catch (err: any) {
+        if (err.code === 'unavailable') {
+          throw new Error("El servidor de base de datos no responde. ¿Has creado la base de datos Firestore en el console?");
+        }
+        throw err;
+      }
       
       if (idSnap.exists()) {
-        setErrorMessage("Esta cédula ya posee un expediente registrado en el sistema nacional.");
+        setErrorMessage("Esta cédula ya posee un expediente registrado.");
         setIsLoading(false);
         return;
       }
 
-      // 2. Crear usuario en Firebase Auth
+      // 2. Crear usuario en Auth
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const firebaseUser = userCredential.user;
 
-      // 3. Actualizar el perfil básico de Auth
+      // 3. Actualizar perfil
       await updateProfile(firebaseUser, {
         displayName: formData.fullName
       });
 
-      // 4. Guardar en Firestore: Mapeo de Cédula y Perfil Completo
+      // 4. Guardar expediente
       const [firstName = '', ...lastNameParts] = formData.fullName.split(' ');
       const lastName = lastNameParts.join(' ');
 
-      // Guardamos la cédula como documento principal para búsqueda rápida
       await setDoc(idRef, { userId: firebaseUser.uid, idNumber: formData.idNumber });
       
-      // Guardamos el expediente completo
       await setDoc(doc(db, 'users', firebaseUser.uid), {
         id: firebaseUser.uid,
         username: formData.username,
@@ -101,25 +108,20 @@ export default function Register() {
       toast({ title: "Expediente Creado", description: "Bienvenido a la Red Nacional de Salud." });
       router.push('/profile');
     } catch (error: any) {
-      console.error("Error detallado de registro:", error);
+      let friendlyMessage = "Error al completar el registro.";
       
-      let friendlyMessage = "Error al completar el registro oficial.";
-      
-      // Mapeo de errores específicos para guiar al usuario
       if (error.code === 'auth/email-already-in-use') {
-        friendlyMessage = "Este correo electrónico ya está en uso por otro expediente.";
-      } else if (error.code === 'auth/weak-password') {
-        friendlyMessage = "La contraseña es muy débil. Debe tener al menos 6 caracteres.";
+        friendlyMessage = "Este correo ya está en uso.";
       } else if (error.code === 'auth/operation-not-allowed') {
-        friendlyMessage = "El registro no está habilitado. Por favor, activa 'Email/Password' en Firebase Console.";
-      } else if (error.code === 'permission-denied') {
-        friendlyMessage = "Error de permisos en la base de datos nacional.";
+        friendlyMessage = "El ingreso con correo/contraseña no está habilitado en Firebase Console.";
+      } else if (error.code === 'unavailable' || error.message.includes('unavailable')) {
+        friendlyMessage = "Servicio de Salud no disponible temporalmente. Verifica que Firestore esté habilitado.";
       } else {
-        friendlyMessage = `Error del Sistema: ${error.code || error.message}`;
+        friendlyMessage = `Error: ${error.message || error.code}`;
       }
 
       setErrorMessage(friendlyMessage);
-      toast({ title: "Error de Registro", description: friendlyMessage, variant: "destructive" });
+      toast({ title: "Aviso de Sistema", description: friendlyMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -132,7 +134,7 @@ export default function Register() {
         <Card className="w-full max-w-2xl shadow-2xl rounded-3xl border-none overflow-hidden">
           <div className="bg-primary p-6 text-white text-center">
              <h2 className="text-2xl font-bold font-headline">Portal Nacional de Salud CR</h2>
-             <p className="text-white/80 text-sm">Crea tu expediente digital único para citas médicas</p>
+             <p className="text-white/80 text-sm">Crea tu expediente digital único</p>
           </div>
           <CardContent className="p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -150,14 +152,14 @@ export default function Register() {
                   <Label className="text-sm font-bold">Nombre Completo</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input name="fullName" placeholder="Ej: Esmeralda Molina Segura" className="pl-10 h-11 rounded-xl" required value={formData.fullName} onChange={handleChange} />
+                    <Input name="fullName" placeholder="Ej: José Ángel Castillo" className="pl-10 h-11 rounded-xl" required value={formData.fullName} onChange={handleChange} />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold">Nombre de Usuario</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input name="username" placeholder="shura_95" className="pl-10 h-11 rounded-xl" required value={formData.username} onChange={handleChange} />
+                    <Input name="username" placeholder="shura" className="pl-10 h-11 rounded-xl" required value={formData.username} onChange={handleChange} />
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -196,7 +198,7 @@ export default function Register() {
           </CardContent>
           <CardFooter className="justify-center border-t py-6 bg-muted/20">
             <p className="text-sm text-muted-foreground">
-              ¿Ya tienes un expediente activo? <Link href="/auth/login" className="text-primary font-bold hover:underline">Ingresa aquí</Link>
+              ¿Ya tienes un expediente? <Link href="/auth/login" className="text-primary font-bold hover:underline">Ingresa aquí</Link>
             </p>
           </CardFooter>
         </Card>
