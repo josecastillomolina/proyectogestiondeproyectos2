@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Mail, Lock, Phone, ArrowLeft, Loader2, CreditCard, WifiOff } from 'lucide-react';
+import { User, Mail, Lock, Phone, ArrowLeft, Loader2, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -67,28 +67,26 @@ export default function Register() {
     try {
       // Intento de verificar unicidad de ID
       const idRef = doc(db, 'identifications', formData.idNumber);
-      let idSnap;
       
       try {
-        idSnap = await getDoc(idRef);
+        const idSnap = await getDoc(idRef);
+        if (idSnap.exists()) {
+          toast({ title: "Identificación Duplicada", description: "Esta cédula ya está registrada en el sistema nacional.", variant: "destructive" });
+          setIsLoading(false);
+          return;
+        }
       } catch (err: any) {
-        // Manejo específico para el error de "offline"
-        if (err.message?.includes('offline') || err.code === 'unavailable') {
+        // Manejo mejorado para errores de red o configuración
+        if (err.code === 'unavailable' || err.message?.includes('network')) {
           toast({
-            title: "Error de Conexión",
-            description: "No se pudo conectar con el servidor de salud. Por favor verifica tu internet o asegúrate de que las variables en Netlify sean correctas.",
+            title: "Error de Comunicación",
+            description: "No se pudo establecer conexión con Firebase. Verifica que las llaves en Netlify sean correctas y no tengan espacios.",
             variant: "destructive"
           });
           setIsLoading(false);
           return;
         }
-        throw err; // Re-lanzar si es otro error
-      }
-
-      if (idSnap && idSnap.exists()) {
-        toast({ title: "Identificación Duplicada", description: "Esta cédula ya está registrada en el sistema nacional.", variant: "destructive" });
-        setIsLoading(false);
-        return;
+        throw err;
       }
 
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
