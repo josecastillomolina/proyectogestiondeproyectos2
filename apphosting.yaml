@@ -5,3 +5,17 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyDF6Yyl1TYkBBIKdWY_dcvki1F6eLiOuZA
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: agendacitas-nacional.firebaseapp.com
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: agendacitas-nacional
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: agendacitas-nacional.appspot.com
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "4902577265"
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:4902577265:web:abc123def456"
