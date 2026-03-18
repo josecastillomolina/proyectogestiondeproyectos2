@@ -98,10 +98,8 @@ export default function Appointments() {
   const [isBooking, setIsBooking] = useState(false);
   const [bookedAppointment, setBookedAppointment] = useState<any>(null);
 
-  // Filtrar motivos basados en la especialidad
   const availableReasons = specialty ? REASONS_BY_SPECIALTY[specialty] || [] : [];
 
-  // Limpiar motivo seleccionado si cambia la especialidad
   useEffect(() => {
     setSelectedReason(null);
   }, [specialty]);
@@ -111,18 +109,14 @@ export default function Appointments() {
   const getSuggestedDate = (severity: string) => {
     const d = new Date();
     let daysToAdd;
-    
     if (severity === 'high') {
       daysToAdd = Math.floor(Math.random() * 2) + 1;
     } else {
       daysToAdd = Math.floor(Math.random() * 5) + 12;
     }
-    
     d.setDate(d.getDate() + daysToAdd);
-    
     const hour = Math.floor(Math.random() * 8) + 8;
     const minutes = [0, 15, 30, 45][Math.floor(Math.random() * 4)];
-    
     d.setHours(hour, minutes, 0, 0);
     return d;
   };
@@ -133,7 +127,7 @@ export default function Appointments() {
   };
 
   const handleBooking = () => {
-    if (!user) {
+    if (!user && !localStorage.getItem('sesion_activa')) {
       toast({ title: "Acceso Requerido", description: "Inicia sesión para agendar tu cita nacional." });
       router.push('/auth/login');
       return;
@@ -146,13 +140,13 @@ export default function Appointments() {
 
     setIsBooking(true);
     const appointmentDate = getSuggestedDate(selectedReason.severity);
-    const appointmentId = doc(collection(db!, "temp")).id;
-    const voucherCode = `CR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const appointmentId = Date.now().toString();
+    const voucherCode = `AC-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     const doctorName = getRandomDoctor(specialty);
 
     const newAppointment = {
       id: appointmentId,
-      userId: user.uid,
+      userId: user?.uid || 'local-user',
       healthCenterId: suggestedCenter.id,
       healthCenterName: suggestedCenter.name,
       specialty: specialty,
@@ -166,11 +160,19 @@ export default function Appointments() {
       priority: selectedReason.severity === 'high' ? 'Alta' : 'Estándar'
     };
 
-    const appointmentRef = doc(db!, 'users', user.uid, 'appointments', appointmentId);
-    setDocumentNonBlocking(appointmentRef, newAppointment, { merge: true });
+    // Guardar en Firestore (Si disponible)
+    if (db && user?.uid) {
+      const appointmentRef = doc(db, 'users', user.uid, 'appointments', appointmentId);
+      setDocumentNonBlocking(appointmentRef, newAppointment, { merge: true });
+    }
+
+    // Guardar en LocalStorage (SÍ O SÍ)
+    const existingCitas = JSON.parse(localStorage.getItem('citas_agendadas') || '[]');
+    existingCitas.push(newAppointment);
+    localStorage.setItem('citas_agendadas', JSON.stringify(existingCitas));
     
     setBookedAppointment(newAppointment);
-    toast({ title: "Cita Confirmada", description: "Tu espacio ha sido reservado según la prioridad médica." });
+    toast({ title: "Cita Agendada SÍ O SÍ", description: "Tu espacio ha sido reservado y guardado en tu expediente local." });
     setIsBooking(false);
   };
 
@@ -264,7 +266,7 @@ export default function Appointments() {
                         if (reason) setSelectedReason(reason);
                       }}
                       disabled={!specialty}
-                      key={specialty} // Reiniciar select cuando cambie la especialidad
+                      key={specialty}
                     >
                       <SelectTrigger className="rounded-xl h-12">
                         <SelectValue placeholder={specialty ? "Elige el motivo" : "Elige primero la especialidad"} />
