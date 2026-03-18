@@ -1,7 +1,6 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -30,6 +29,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Next.js maneja automáticamente las variables NEXT_PUBLIC_ al cliente
 };
 
 export default nextConfig;

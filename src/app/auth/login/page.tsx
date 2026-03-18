@@ -6,10 +6,9 @@ import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { LogIn, Lock, ArrowLeft, Loader2, Mail, AlertCircle } from 'lucide-react';
+import { LogIn, Lock, ArrowLeft, Loader2, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -35,10 +34,11 @@ export default function Login() {
     e.preventDefault();
     if (isLoading) return;
 
+    // Validación de disponibilidad del servicio
     if (!auth) {
       toast({
-        title: "Servicio no disponible",
-        description: "El portal de salud no puede conectar con la base de datos nacional. Verifica la configuración en Netlify.",
+        title: "Servicio no configurado",
+        description: "El portal no detecta las llaves de Firebase en Netlify. Por favor, revisa las variables de entorno NEXT_PUBLIC_.",
         variant: "destructive"
       });
       return;
@@ -57,6 +57,7 @@ export default function Login() {
       let errorMessage = "Credenciales incorrectas. Inténtalo de nuevo.";
       if (error.code === 'auth/invalid-credential') errorMessage = "El correo o la contraseña son incorrectos.";
       else if (error.code === 'auth/too-many-requests') errorMessage = "Demasiados intentos. Espera unos minutos.";
+      else if (error.code === 'auth/invalid-api-key') errorMessage = "Error de configuración: API Key inválida.";
       
       toast({
         title: "Error de Acceso",
@@ -83,12 +84,6 @@ export default function Login() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {!auth && !isUserLoading && (
-              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-amber-800 text-sm">
-                <AlertCircle className="h-5 w-5 shrink-0" />
-                <p>El sistema está en modo de espera. Si ya configuraste las variables en Netlify, el acceso se habilitará en segundos.</p>
-              </div>
-            )}
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email">Correo Electrónico</Label>
@@ -107,9 +102,7 @@ export default function Login() {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Contraseña</Label>
-                </div>
+                <Label htmlFor="password">Contraseña</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <input

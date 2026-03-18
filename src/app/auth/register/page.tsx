@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Mail, Lock, Phone, ArrowLeft, Loader2, CreditCard, Flag, AlertCircle } from 'lucide-react';
+import { User, Mail, Lock, Phone, ArrowLeft, Loader2, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -50,8 +50,8 @@ export default function Register() {
 
     if (!auth || !db) {
       toast({
-        title: "Conexión Pendiente",
-        description: "El sistema nacional de salud está sincronizando los servicios. Reintenta en unos segundos.",
+        title: "Sistema no inicializado",
+        description: "Falta la configuración de Firebase en las variables de entorno de Netlify.",
         variant: "destructive"
       });
       return;
@@ -69,7 +69,7 @@ export default function Register() {
       const idSnap = await getDoc(idRef);
 
       if (idSnap.exists()) {
-        toast({ title: "Identificación Duplicada", description: "Esta cédula ya está registrada.", variant: "destructive" });
+        toast({ title: "Identificación Duplicada", description: "Esta cédula ya está registrada en el sistema nacional.", variant: "destructive" });
         setIsLoading(false);
         return;
       }
@@ -95,10 +95,14 @@ export default function Register() {
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      toast({ title: "Registro Exitoso", description: "Tu expediente nacional ha sido creado." });
+      toast({ title: "Expediente Creado", description: "Bienvenido al sistema unificado de salud." });
       router.push('/profile');
     } catch (error: any) {
-      toast({ title: "Error de Registro", description: error.message || "No se pudo crear el expediente.", variant: "destructive" });
+      toast({ 
+        title: "Error de Registro", 
+        description: error.message || "No se pudo crear el expediente nacional.", 
+        variant: "destructive" 
+      });
     } finally {
       setIsLoading(false);
     }
@@ -114,12 +118,6 @@ export default function Register() {
              <p className="text-white/80 text-sm">Crea tu expediente digital unificado</p>
           </div>
           <CardContent className="p-8">
-            {!auth && !isUserLoading && (
-              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-amber-800 text-sm">
-                <AlertCircle className="h-5 w-5 shrink-0" />
-                <p>Si ya configuraste las llaves en Netlify, el sistema se activará automáticamente en breve.</p>
-              </div>
-            )}
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
