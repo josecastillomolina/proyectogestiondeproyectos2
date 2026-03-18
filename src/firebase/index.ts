@@ -6,7 +6,7 @@ import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 
 /**
- * Initializes Firebase SDKs with safety checks for SSR and build-time.
+ * Initializes Firebase SDKs with safety checks for SSR and missing configuration.
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
@@ -17,7 +17,16 @@ export function initializeFirebase() {
     };
   }
 
-  // Asegura que no se intente inicializar múltiples veces o sin config
+  // Pre-check: If API Key is missing, return nulls safely instead of crashing later
+  if (!firebaseConfig.apiKey) {
+    console.warn('⚠️ Firebase: NEXT_PUBLIC_FIREBASE_API_KEY is missing. Check your environment variables.');
+    return {
+      firebaseApp: null as any,
+      auth: null as any,
+      firestore: null as any,
+    };
+  }
+
   if (!getApps().length) {
     let firebaseApp: FirebaseApp;
     try {
@@ -39,11 +48,20 @@ export function initializeFirebase() {
 export function getSdks(firebaseApp: FirebaseApp) {
   if (!firebaseApp) return { firebaseApp: null as any, auth: null as any, firestore: null as any };
   
-  return {
-    firebaseApp,
-    auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp)
-  };
+  try {
+    return {
+      firebaseApp,
+      auth: getAuth(firebaseApp),
+      firestore: getFirestore(firebaseApp)
+    };
+  } catch (e) {
+    console.error("⚠️ Firebase: Error initializing services (check API Key):", e);
+    return {
+      firebaseApp,
+      auth: null as any,
+      firestore: null as any
+    };
+  }
 }
 
 export * from './provider';

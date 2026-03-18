@@ -4,7 +4,9 @@ Este proyecto es un portal oficial para la gestión de citas médicas en Costa R
 
 ## 🛠️ 1. Configuración de Variables de Entorno (IMPORTANTE)
 
-Para que el proyecto funcione en Netlify, debes configurar las siguientes variables en **Netlify (Site settings > Environment variables)**. Copia estos valores desde la configuración de tu proyecto en la consola de Firebase:
+Para que el proyecto funcione en Netlify, debes configurar las siguientes variables en **Netlify (Site settings > Environment variables)**. Si no lo haces, verás errores de `invalid-api-key`.
+
+Copia estos valores desde la consola de Firebase (**Project Settings > General > Your Apps > Web App**):
 
 | Nombre de la Variable | Descripción |
 |----------|-------------|
@@ -35,7 +37,7 @@ Ejecuta estos comandos en orden para subir tu código corregido:
 
 4. **Primer commit**:
    ```bash
-   git commit -m "🚀 Prep: Ready for Netlify deployment with Env Vars"
+   git commit -m "🚀 Fix: Robust Firebase initialization for Netlify"
    ```
 
 5. **Conectar a tu repositorio**:
