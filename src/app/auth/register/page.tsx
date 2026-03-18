@@ -50,22 +50,17 @@ export default function Register() {
 
     if (!auth || !db) {
       toast({
-        title: "Sistema no listo",
-        description: "El portal no detecta las llaves de Firebase. Si ya las agregaste en Netlify, asegúrate de haber hecho un 'Trigger Deploy'.",
+        title: "Sistema no detectado",
+        description: "El portal no detecta las llaves de acceso de Firebase. Por favor configúralas en Netlify y realiza un 'Trigger Deploy'.",
         variant: "destructive"
       });
-      return;
-    }
-
-    if (!formData.identificationType) {
-      toast({ title: "Dato Requerido", description: "Selecciona el tipo de identificación.", variant: "destructive" });
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // Intento de verificar unicidad de ID
+      // Intento de verificar unicidad de ID con manejo de timeout/offline
       const idRef = doc(db, 'identifications', formData.idNumber);
       
       try {
@@ -76,11 +71,12 @@ export default function Register() {
           return;
         }
       } catch (err: any) {
-        // Manejo mejorado para errores de red o configuración
-        if (err.code === 'unavailable' || err.message?.includes('network')) {
+        console.error("Error al conectar con Firestore:", err);
+        // Error común cuando la API Key es inválida o no hay conexión
+        if (err.code === 'unavailable' || err.code === 'permission-denied' || err.message?.includes('apiKey')) {
           toast({
-            title: "Error de Comunicación",
-            description: "No se pudo establecer conexión con Firebase. Verifica que las llaves en Netlify sean correctas y no tengan espacios.",
+            title: "Error de Configuración",
+            description: "No se pudo conectar con Firebase. Asegúrate de que las llaves en Netlify no tengan espacios y que Firestore esté habilitado.",
             variant: "destructive"
           });
           setIsLoading(false);
@@ -95,8 +91,10 @@ export default function Register() {
       const [firstName, ...lastNameParts] = formData.fullName.split(' ');
       const lastName = lastNameParts.join(' ');
 
+      // Guardar mapeo de identificación
       await setDoc(idRef, { userId: firebaseUser.uid });
 
+      // Guardar perfil de usuario
       setDocumentNonBlocking(doc(db, 'users', firebaseUser.uid), {
         id: firebaseUser.uid,
         username: formData.username,
@@ -114,8 +112,8 @@ export default function Register() {
       router.push('/profile');
     } catch (error: any) {
       toast({ 
-        title: "Error de Registro", 
-        description: error.message || "No se pudo crear el expediente nacional.", 
+        title: "Fallo en el Registro", 
+        description: error.message || "Error al crear el expediente. Inténtalo de nuevo.", 
         variant: "destructive" 
       });
     } finally {

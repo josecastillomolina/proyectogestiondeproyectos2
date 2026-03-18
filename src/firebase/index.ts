@@ -9,18 +9,17 @@ import { getFirestore } from 'firebase/firestore';
  * Inicializa los SDKs de Firebase de forma segura para el cliente.
  */
 export function initializeFirebase() {
-  // Evitar ejecución en el lado del servidor
   if (typeof window === 'undefined') {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
-  // Verificar si las variables de entorno están presentes
-  const isConfigIncomplete = !firebaseConfig.apiKey || 
-                             firebaseConfig.apiKey === "undefined" || 
-                             firebaseConfig.apiKey === "";
+  // Validación robusta de la configuración
+  const isValidConfig = firebaseConfig.apiKey && 
+                        firebaseConfig.apiKey !== "undefined" && 
+                        firebaseConfig.apiKey !== "";
 
-  if (isConfigIncomplete) {
-    console.warn('Firebase: Configuración de variables de entorno incompleta en el cliente.');
+  if (!isValidConfig) {
+    console.warn('Firebase: La configuración no está lista. Revisa las variables de entorno NEXT_PUBLIC_ en Netlify.');
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
@@ -29,6 +28,7 @@ export function initializeFirebase() {
 
     if (!getApps().length) {
       firebaseApp = initializeApp(firebaseConfig);
+      console.log('Firebase: Inicializado correctamente.');
     } else {
       firebaseApp = getApp();
     }
