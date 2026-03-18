@@ -49,19 +49,28 @@ export default function Register() {
     setErrorMessage(null);
 
     if (!auth || !db) {
-      setErrorMessage("Los servicios de salud digitales no están disponibles actualmente.");
+      setErrorMessage("Los servicios de salud digitales no están disponibles actualmente. Verifica tu conexión.");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // 1. Verificar unicidad de identificación
+      // 1. Verificar unicidad de identificación (Cédula)
       const idRef = doc(db, 'identifications', formData.idNumber);
-      const idSnap = await getDoc(idRef);
+      
+      let idSnap;
+      try {
+        idSnap = await getDoc(idRef);
+      } catch (firestoreError: any) {
+        if (firestoreError.code === 'unavailable' || firestoreError.message.includes('offline')) {
+          throw new Error("La base de datos nacional no responde. Asegúrate de que Firestore esté habilitado en tu consola de Firebase.");
+        }
+        throw firestoreError;
+      }
       
       if (idSnap.exists()) {
-        setErrorMessage("Esta identificación ya posee un expediente registrado en el sistema nacional.");
+        setErrorMessage("Esta cédula ya posee un expediente registrado. Si es un error, contacta a soporte.");
         setIsLoading(false);
         return;
       }
@@ -75,25 +84,27 @@ export default function Register() {
         displayName: formData.fullName
       });
 
-      // 3. Guardar mapeo de identificación y Perfil
-      const [firstName, ...lastNameParts] = formData.fullName.split(' ');
+      // 3. Guardar mapeo de identificación y Perfil oficial
+      const [firstName = '', ...lastNameParts] = formData.fullName.split(' ');
       const lastName = lastNameParts.join(' ');
 
       // Mapeo de unicidad
       await setDoc(idRef, { userId: firebaseUser.uid });
       
-      // Documento de perfil de usuario con todos los campos requeridos
+      // Documento de perfil de usuario con idNumber explícito
       await setDoc(doc(db, 'users', firebaseUser.uid), {
         id: firebaseUser.uid,
         username: formData.username,
-        firstName: firstName || '',
-        lastName: lastName || '',
+        firstName: firstName,
+        lastName: lastName,
         email: formData.email,
         phoneNumber: formData.phone,
         identificationType: formData.identificationType,
-        idNumber: formData.idNumber,
+        idNumber: formData.idNumber, // Guardamos la cédula aquí
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        bloodType: 'Pendiente',
+        allergies: 'Ninguna reportada'
       });
 
       toast({ title: "Expediente Creado", description: "Bienvenido al Sistema Nacional de Salud de Costa Rica." });
@@ -103,15 +114,13 @@ export default function Register() {
       let friendlyMessage = "No se pudo completar el registro oficial.";
       
       if (error.code === 'auth/email-already-in-use') {
-        friendlyMessage = "Este correo electrónico ya está registrado en la base de datos nacional.";
+        friendlyMessage = "Este correo electrónico ya está registrado.";
       } else if (error.code === 'auth/weak-password') {
-        friendlyMessage = "La contraseña debe tener al menos 6 caracteres por seguridad.";
-      } else if (error.code === 'auth/invalid-email') {
-        friendlyMessage = "El formato del correo electrónico no es válido.";
-      } else if (error.code === 'auth/operation-not-allowed') {
-        friendlyMessage = "El método de registro está deshabilitado. Por favor, habilite Correo/Contraseña en Firebase Console.";
-      } else if (error.message) {
-        friendlyMessage = `Error: ${error.message}`;
+        friendlyMessage = "La contraseña es muy débil (mínimo 6 caracteres).";
+      } else if (error.code === 'permission-denied') {
+        friendlyMessage = "Error de permisos en la base de datos. Verifica las reglas de Firestore.";
+      } else {
+        friendlyMessage = error.message || "Error inesperado en el servidor nacional.";
       }
 
       setErrorMessage(friendlyMessage);
@@ -158,7 +167,7 @@ export default function Register() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="idNumber" className="text-sm font-bold">Número de Cédula</Label>
+                  <Label htmlFor="idNumber" className="text-sm font-bold">Número de Cédula (ID)</Label>
                   <div className="relative">
                     <CreditCard className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input id="idNumber" name="idNumber" placeholder="1-1111-1111" className="pl-10 h-11 rounded-xl" required value={formData.idNumber} onChange={handleChange} />
@@ -186,7 +195,7 @@ export default function Register() {
                   className="w-full h-12 text-lg rounded-full shadow-lg" 
                   disabled={isLoading}
                 >
-                  {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Crear Expediente"}
+                  {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Crear Expediente Digital"}
                 </Button>
                 <Button type="button" variant="ghost" className="w-full rounded-full" onClick={() => router.push('/')} disabled={isLoading}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Volver al Inicio

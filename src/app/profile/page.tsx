@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -41,13 +40,18 @@ export default function Profile() {
     canton: '',
     bloodType: '',
     allergies: '',
-    address: ''
+    address: '',
+    idNumber: ''
   });
 
+  // Guard de seguridad contra spinner infinito
   useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/auth/login');
-    }
+    const timeout = setTimeout(() => {
+      if (!isUserLoading && !user) {
+        router.push('/auth/login');
+      }
+    }, 4000);
+    return () => clearTimeout(timeout);
   }, [user, isUserLoading, router]);
 
   const profileRef = useMemoFirebase(() => {
@@ -71,9 +75,10 @@ export default function Profile() {
         phoneNumber: profile.phoneNumber || '',
         province: profile.province || '',
         canton: profile.canton || '',
-        bloodType: profile.bloodType || '',
-        allergies: profile.allergies || '',
-        address: profile.address || ''
+        bloodType: profile.bloodType || 'Pendiente',
+        allergies: profile.allergies || 'Ninguna reportada',
+        address: profile.address || '',
+        idNumber: profile.idNumber || ''
       });
     }
   }, [profile]);
@@ -110,7 +115,7 @@ export default function Profile() {
     });
   };
 
-  if (isUserLoading) {
+  if (isUserLoading && !user) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
@@ -122,13 +127,11 @@ export default function Profile() {
     );
   }
 
-  if (!user) return null;
-
-  // Priorizamos datos de Firestore, pero usamos Auth como respaldo para Usuario y Correo
-  const displayUser = profile?.username || user.displayName?.split(' ')[0]?.toLowerCase() || user.email?.split('@')[0] || "usuario";
-  const displayEmail = profile?.email || user.email;
-  const displayId = profile?.idNumber || "Pendiente de registro";
-  const displayFullName = profile?.firstName ? `${profile.firstName} ${profile.lastName}` : (user.displayName || "Expediente Digital");
+  // Usamos datos de Firestore como prioridad, Auth como respaldo
+  const displayUser = profile?.username || user?.displayName?.split(' ')[0]?.toLowerCase() || user?.email?.split('@')[0] || "usuario";
+  const displayEmail = profile?.email || user?.email || "Cargando...";
+  const displayId = profile?.idNumber || profileData.idNumber || "Consultando registro...";
+  const displayFullName = profile?.firstName ? `${profile.firstName} ${profile.lastName}` : (user?.displayName || "Expediente Digital");
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -136,6 +139,7 @@ export default function Profile() {
       <main className="flex-grow bg-accent/5 py-12">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Panel Lateral del Perfil */}
             <Card className="lg:col-span-1 rounded-3xl overflow-hidden border-none shadow-xl h-fit">
               <CardHeader className="bg-primary text-white text-center py-10">
                 <div className="mx-auto w-20 h-20 rounded-full border-4 border-white overflow-hidden mb-4 bg-white/20 flex items-center justify-center">
@@ -147,8 +151,8 @@ export default function Profile() {
               <CardContent className="p-6 space-y-6">
                 <div className="space-y-4">
                    <div className="space-y-1">
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Identificación (Cédula)</p>
-                      <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-xl border border-muted-foreground/10">
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Cédula de Identidad</p>
+                      <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-xl border border-primary/10">
                         <CreditCard className="h-4 w-4 text-primary shrink-0" />
                         <span className="text-sm font-bold text-foreground">{displayId}</span>
                       </div>
@@ -161,18 +165,16 @@ export default function Profile() {
                       </div>
                    </div>
                    <div className="space-y-1">
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Residencia Actual</p>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Contacto</p>
                       <div className="flex items-center gap-2 px-1">
-                        <MapPin className="h-3 w-3 text-muted-foreground" /> 
-                        <p className="text-sm text-muted-foreground">
-                          {profile?.province ? `${profile.province}${profile.canton ? `, ${profile.canton}` : ''}` : "Dirección no definida"}
-                        </p>
+                        <Phone className="h-3 w-3 text-muted-foreground" />
+                        <p className="text-sm text-foreground">{profile?.phoneNumber || "No registrado"}</p>
                       </div>
                    </div>
                 </div>
                 <div className="pt-4 border-t space-y-2">
                   <Button variant="outline" className="w-full justify-start rounded-xl" onClick={() => setIsEditingProfile(true)}>
-                    <Edit3 className="h-4 w-4 mr-2" /> Editar Expediente
+                    <Edit3 className="h-4 w-4 mr-2" /> Editar Datos
                   </Button>
                   <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/5 rounded-xl" onClick={handleSignOut}>
                     <LogOut className="h-4 w-4 mr-2" /> Cerrar Sesión
@@ -231,7 +233,7 @@ export default function Profile() {
                     ) : (
                       <Card className="rounded-3xl border-dashed border-2 p-20 text-center space-y-4 bg-white/50">
                          <Calendar className="h-12 w-12 text-muted-foreground/30 mx-auto" />
-                         <p className="text-xl font-bold text-muted-foreground">No tienes citas activas en el sistema nacional.</p>
+                         <p className="text-xl font-bold text-muted-foreground">No tienes citas activas.</p>
                          <Button onClick={() => router.push('/appointments')} className="rounded-full">Agendar mi primera cita</Button>
                       </Card>
                     )}
@@ -245,7 +247,7 @@ export default function Profile() {
                         <Activity className="h-12 w-12 text-primary" />
                         <div>
                             <h3 className="font-bold text-xl">Expediente Médico Nacional</h3>
-                            <p className="text-sm text-muted-foreground">Información clínica vinculada a su identidad ciudadana.</p>
+                            <p className="text-sm text-muted-foreground">Datos vinculados a su cédula de identidad.</p>
                         </div>
                       </div>
                     </div>
@@ -255,11 +257,11 @@ export default function Profile() {
                           <p className="text-3xl font-bold text-secondary">{profile?.bloodType || "Pendiente"}</p>
                        </Card>
                        <Card className="p-6 rounded-2xl bg-muted/30 border-none shadow-sm space-y-3">
-                          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Alergias Conocidas</p>
+                          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Alergias</p>
                           <p className="text-lg font-bold text-foreground">{profile?.allergies || "Ninguna reportada"}</p>
                        </Card>
                        <Card className="p-6 rounded-2xl bg-muted/30 border-none shadow-sm space-y-3 md:col-span-2">
-                          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Dirección de Notificación</p>
+                          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Dirección Reportada</p>
                           <p className="text-sm text-foreground italic">{profile?.address || "No especificada en el expediente."}</p>
                        </Card>
                     </div>
@@ -270,11 +272,12 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* Modal de Edición */}
         <Dialog open={isEditingProfile} onOpenChange={setIsEditingProfile}>
           <DialogContent className="max-w-xl rounded-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold font-headline">Actualizar Expediente Digital</DialogTitle>
-              <DialogDescription>Completa tu información clínica para agilizar la atención en sedes nacionales.</DialogDescription>
+              <DialogTitle className="text-2xl font-bold font-headline">Actualizar Expediente</DialogTitle>
+              <DialogDescription>Modifica tu información clínica para agilizar la atención nacional.</DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
               <div className="space-y-2">
@@ -284,9 +287,9 @@ export default function Profile() {
                   <SelectContent>{BLOOD_TYPES.map(bt => <SelectItem key={bt} value={bt}>{bt}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2"><Label htmlFor="phoneNumber">Teléfono de Contacto</Label><Input id="phoneNumber" className="rounded-xl" value={profileData.phoneNumber} onChange={(e) => setProfileData({...profileData, phoneNumber: e.target.value})} /></div>
-              <div className="space-y-2 md:col-span-2"><Label htmlFor="allergies">Alergias</Label><Input id="allergies" className="rounded-xl" placeholder="Escribe tus alergias aquí" value={profileData.allergies} onChange={(e) => setProfileData({...profileData, allergies: e.target.value})} /></div>
-              <div className="space-y-2 md:col-span-2"><Label htmlFor="address">Dirección Exacta de Residencia</Label><Input id="address" className="rounded-xl" placeholder="Provincia, Cantón, Distrito..." value={profileData.address} onChange={(e) => setProfileData({...profileData, address: e.target.value})} /></div>
+              <div className="space-y-2"><Label htmlFor="phoneNumber">Teléfono</Label><Input id="phoneNumber" className="rounded-xl" value={profileData.phoneNumber} onChange={(e) => setProfileData({...profileData, phoneNumber: e.target.value})} /></div>
+              <div className="space-y-2 md:col-span-2"><Label htmlFor="allergies">Alergias</Label><Input id="allergies" className="rounded-xl" placeholder="Escribe tus alergias" value={profileData.allergies} onChange={(e) => setProfileData({...profileData, allergies: e.target.value})} /></div>
+              <div className="space-y-2 md:col-span-2"><Label htmlFor="address">Dirección de Residencia</Label><Input id="address" className="rounded-xl" value={profileData.address} onChange={(e) => setProfileData({...profileData, address: e.target.value})} /></div>
             </div>
             <DialogFooter className="gap-2 pt-4">
               <Button variant="outline" className="rounded-full px-6" onClick={() => setIsEditingProfile(false)}>Cancelar</Button>
