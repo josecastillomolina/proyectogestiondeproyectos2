@@ -1,3 +1,4 @@
+
 'use client';
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
@@ -6,17 +7,15 @@ import { getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from './config';
 
 /**
- * Inicialización limpia de Firebase.
- * Se han eliminado las validaciones estrictas para permitir que el SDK maneje los errores.
+ * Inicialización de Firebase para el Portal Nacional.
+ * Se utiliza la configuración cargada desde las variables de entorno.
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
-  // Log de diagnóstico simple para confirmar carga en el navegador
-  console.log('[Firebase Init] Cargando configuración oficial...');
-
+  // Inicialización limpia: Firebase SDK maneja sus propios errores internos
   const firebaseApp = getApps().length === 0 
     ? initializeApp(firebaseConfig) 
     : getApp();
