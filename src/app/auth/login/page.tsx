@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -37,7 +38,7 @@ export default function Login() {
     setErrorMessage(null);
 
     if (!auth) {
-      setErrorMessage("Sistema de acceso no inicializado. Por favor, realiza un 'Deploy project without cache' en Netlify.");
+      setErrorMessage("El sistema de acceso no está listo. Por favor, en Netlify realiza un 'Deploy project without cache' para activar las llaves de Firebase.");
       return;
     }
 
@@ -53,19 +54,13 @@ export default function Login() {
       let friendlyError = "No se pudo iniciar sesión.";
       
       if (error.code?.includes('api-key-not-valid')) {
-        friendlyError = "La llave de acceso al sistema es inválida. Revisa las variables de entorno en Netlify.";
+        friendlyError = "La llave de acceso de Firebase no es válida. Revisa Netlify y haz un despliegue sin caché.";
       } else if (error.code === 'auth/invalid-credential') {
         friendlyError = "Correo electrónico o contraseña incorrectos.";
-      } else if (error.code === 'auth/user-not-found') {
-        friendlyError = "No se encontró un expediente con este correo.";
-      } else if (error.code === 'auth/wrong-password') {
-        friendlyError = "La contraseña ingresada es incorrecta.";
       } else if (error.code === 'auth/too-many-requests') {
-        friendlyError = "Demasiados intentos fallidos. Tu cuenta ha sido bloqueada temporalmente.";
-      } else if (error.code === 'auth/network-request-failed') {
-        friendlyError = "Error de red. Verifica la configuración de Firebase en Netlify.";
+        friendlyError = "Demasiados intentos fallidos. Intenta más tarde.";
       } else {
-        friendlyError = `Error (${error.code || 'desconocido'}): ${error.message}`;
+        friendlyError = error.message || "Error desconocido al ingresar.";
       }
       
       setErrorMessage(friendlyError);

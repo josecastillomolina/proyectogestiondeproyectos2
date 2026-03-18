@@ -7,8 +7,11 @@ const getCleanEnv = (key: string | undefined) => {
   if (!key || key === 'undefined' || key === 'null' || key.trim() === '') {
     return '';
   }
-  // Elimina espacios, comillas simples/dobles y caracteres de escape comunes
-  return key.trim().replace(/['"\s\\]/g, '');
+  // Elimina espacios, comillas simples/dobles, prefijos accidentales de copia y caracteres de escape
+  return key
+    .trim()
+    .replace(/['"\s\\]/g, '')
+    .replace(/^apiKey:\s*/, ''); // Por si alguien copió "apiKey: AIza..."
 };
 
 export const firebaseConfig = {

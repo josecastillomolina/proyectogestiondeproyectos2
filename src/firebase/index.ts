@@ -14,14 +14,16 @@ if (typeof window !== 'undefined') {
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
   const isPresent = !!apiKey && apiKey !== 'undefined' && apiKey.length > 0;
   
-  console.log('%c[Firebase Config Debug]', 'color: #f39c12; font-weight: bold;', {
-    variablePresente: isPresent,
-    longitud: apiKey?.length || 0,
-    empiezaConAIza: apiKey?.startsWith('AIza') || false,
-    mensaje: isPresent 
-      ? 'La llave parece estar cargada correctamente.' 
-      : 'ADVERTENCIA: La variable NEXT_PUBLIC_FIREBASE_API_KEY está VACÍA en el bundle del navegador.'
-  });
+  if (!isPresent) {
+    console.warn('%c[Firebase Diagnostic] VARIABLE FALTANTE', 'color: #e67e22; font-weight: bold;', 
+      'La variable NEXT_PUBLIC_FIREBASE_API_KEY no se detecta en el bundle del cliente. ' +
+      'Si estás en Netlify, realiza un "Deploy project without cache".');
+  } else {
+    console.log('%c[Firebase Diagnostic] CONFIGURACIÓN CARGADA', 'color: #27ae60; font-weight: bold;', {
+      longitud: apiKey?.length,
+      valido: apiKey?.startsWith('AIza') && apiKey.length >= 35,
+    });
+  }
 }
 
 /**
@@ -34,16 +36,16 @@ export function initializeFirebase() {
 
   const { apiKey } = firebaseConfig;
 
-  // Validación crítica: Si no hay API Key, informamos al usuario qué hacer en Netlify
+  // Validación crítica: Si no hay API Key o es inválida, informamos pero no rompemos el renderizado
   if (!apiKey || !apiKey.startsWith('AIza') || apiKey.length < 35) {
     console.error('%c[Firebase] ERROR DE CONFIGURACIÓN CRÍTICO', 'color: #e74c3c; font-size: 16px; font-weight: bold;');
     console.table({
-      'Problema Detectado': !apiKey ? 'Variable no encontrada' : 'Formato de llave inválido',
-      'Valor Actual': apiKey ? `Inicia con ${apiKey.substring(0, 4)}...` : 'VACÍO',
-      'Acción Requerida': 'En Netlify: Trigger deploy -> Deploy project without cache'
+      'Problema': !apiKey ? 'Variable de entorno no encontrada' : 'Formato de llave inválido',
+      'Valor Detectado': apiKey ? `${apiKey.substring(0, 4)}...` : 'VACÍO',
+      'Causa Probable': 'Las variables se agregaron a Netlify después del último despliegue.',
+      'Acción Requerida': 'Netlify: Trigger deploy -> Deploy project without cache'
     });
     
-    // Devolvemos nulos para evitar que initializeApp lance una excepción fatal
     return { firebaseApp: null, auth: null, firestore: null };
   }
 

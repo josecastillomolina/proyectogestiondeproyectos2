@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -50,7 +51,7 @@ export default function Register() {
     setErrorMessage(null);
 
     if (!auth || !db) {
-      setErrorMessage("El sistema de salud no está configurado correctamente.");
+      setErrorMessage("La configuración de Firebase no se ha cargado. En Netlify, ve a Deploys -> Trigger deploy -> Deploy project without cache.");
       return;
     }
 
@@ -98,18 +99,14 @@ export default function Register() {
       
       let friendlyMessage = "No se pudo completar el registro.";
       
-      if (error.code === 'auth/api-key-not-valid' || error.message?.includes('api-key-not-valid')) {
-        friendlyMessage = "La llave de acceso de Firebase no es válida. Ve a Firebase Console → Project Settings → copia la apiKey completa y actualiza tu .env.local";
+      if (error.code?.includes('api-key-not-valid')) {
+        friendlyMessage = "La llave de acceso de Firebase no es válida. Revisa tu configuración en Netlify y redespliega sin caché.";
       } else if (error.code === 'auth/email-already-in-use') {
         friendlyMessage = "Este correo ya está registrado en el portal.";
-      } else if (error.code === 'auth/network-request-failed') {
-        friendlyMessage = "Error de conexión. Verifica tu internet.";
-      } else if (error.code === 'auth/configuration-not-found') {
-        friendlyMessage = "Firebase no configurado correctamente en el servidor.";
-      } else if (error.code === 'auth/invalid-api-key') {
-        friendlyMessage = "Llave de acceso inválida. Verifica tu configuración de entorno.";
+      } else if (error.code === 'auth/weak-password') {
+        friendlyMessage = "La contraseña es muy débil (mínimo 6 caracteres).";
       } else {
-        friendlyMessage = `Error (${error.code || 'desconocido'}): ${error.message}`;
+        friendlyMessage = error.message || "Error desconocido al registrar.";
       }
 
       setErrorMessage(friendlyMessage);
