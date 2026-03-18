@@ -1,4 +1,3 @@
-
 'use client';
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
@@ -7,15 +6,14 @@ import { getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from './config';
 
 /**
- * Inicialización de Firebase para el Portal Nacional.
- * Se utiliza la configuración cargada desde las variables de entorno.
+ * Inicialización simplificada de Firebase.
+ * Si la API Key no es válida, el error se capturará en el momento del uso (Login/Registro).
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
-  // Inicialización limpia: Firebase SDK maneja sus propios errores internos
   const firebaseApp = getApps().length === 0 
     ? initializeApp(firebaseConfig) 
     : getApp();
