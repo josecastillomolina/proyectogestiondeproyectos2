@@ -1,33 +1,20 @@
 'use client';
 
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { firebaseConfig } from './config';
+import { auth, db, default as firebaseApp } from './config';
 
 /**
- * Inicialización limpia de Firebase.
- * No realiza validaciones de formato ni lanza excepciones que bloqueen React.
+ * Retorna las instancias ya inicializadas en config.ts
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
-  try {
-    const firebaseApp = getApps().length === 0 
-      ? initializeApp(firebaseConfig) 
-      : getApp();
-
-    return {
-      firebaseApp,
-      auth: getAuth(firebaseApp),
-      firestore: getFirestore(firebaseApp)
-    };
-  } catch (error) {
-    console.warn('[Firebase Init]: No se pudieron cargar los servicios. Verifique sus llaves en .env.local', error);
-    return { firebaseApp: null, auth: null, firestore: null };
-  }
+  return {
+    firebaseApp,
+    auth,
+    firestore: db
+  };
 }
 
 export * from './provider';

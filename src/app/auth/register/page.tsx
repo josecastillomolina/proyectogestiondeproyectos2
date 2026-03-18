@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -71,19 +70,19 @@ export default function Register() {
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const firebaseUser = userCredential.user;
 
-      // Actualizar el nombre en el perfil de Auth para disponibilidad inmediata
+      // Actualizar el nombre en el perfil de Auth
       await updateProfile(firebaseUser, {
         displayName: formData.fullName
       });
 
-      // 3. Guardar mapeo de identificación y Perfil (Estructura completa)
+      // 3. Guardar mapeo de identificación y Perfil
       const [firstName, ...lastNameParts] = formData.fullName.split(' ');
       const lastName = lastNameParts.join(' ');
 
       // Mapeo de unicidad
       await setDoc(idRef, { userId: firebaseUser.uid });
       
-      // Documento de perfil de usuario
+      // Documento de perfil de usuario con todos los campos requeridos
       await setDoc(doc(db, 'users', firebaseUser.uid), {
         id: firebaseUser.uid,
         username: formData.username,
@@ -92,7 +91,7 @@ export default function Register() {
         email: formData.email,
         phoneNumber: formData.phone,
         identificationType: formData.identificationType,
-        idNumber: formData.idNumber, // Aseguramos que se guarde el número de cédula
+        idNumber: formData.idNumber,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -100,6 +99,7 @@ export default function Register() {
       toast({ title: "Expediente Creado", description: "Bienvenido al Sistema Nacional de Salud de Costa Rica." });
       router.push('/profile');
     } catch (error: any) {
+      console.error("Error en registro:", error);
       let friendlyMessage = "No se pudo completar el registro oficial.";
       
       if (error.code === 'auth/email-already-in-use') {
@@ -108,6 +108,10 @@ export default function Register() {
         friendlyMessage = "La contraseña debe tener al menos 6 caracteres por seguridad.";
       } else if (error.code === 'auth/invalid-email') {
         friendlyMessage = "El formato del correo electrónico no es válido.";
+      } else if (error.code === 'auth/operation-not-allowed') {
+        friendlyMessage = "El método de registro está deshabilitado. Por favor, habilite Correo/Contraseña en Firebase Console.";
+      } else if (error.message) {
+        friendlyMessage = `Error: ${error.message}`;
       }
 
       setErrorMessage(friendlyMessage);
