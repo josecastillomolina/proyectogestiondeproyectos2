@@ -6,23 +6,28 @@ import { getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from './config';
 
 /**
- * Inicialización simplificada de Firebase.
- * Si la API Key no es válida, el error se capturará en el momento del uso (Login/Registro).
+ * Inicialización segura de Firebase.
+ * No lanza errores fatales para evitar que Next.js se bloquee completamente.
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
-  const firebaseApp = getApps().length === 0 
-    ? initializeApp(firebaseConfig) 
-    : getApp();
+  try {
+    const firebaseApp = getApps().length === 0 
+      ? initializeApp(firebaseConfig) 
+      : getApp();
 
-  return {
-    firebaseApp,
-    auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp)
-  };
+    return {
+      firebaseApp,
+      auth: getAuth(firebaseApp),
+      firestore: getFirestore(firebaseApp)
+    };
+  } catch (error) {
+    console.error('[Firebase Init Error]:', error);
+    return { firebaseApp: null, auth: null, firestore: null };
+  }
 }
 
 export * from './provider';
