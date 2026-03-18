@@ -30,7 +30,6 @@ export default function Register() {
     password: '',
     fullName: '',
     phone: '',
-    identificationType: 'Nacional',
     idNumber: ''
   });
 
@@ -50,39 +49,40 @@ export default function Register() {
     setErrorMessage(null);
 
     if (!auth || !db) {
-      setErrorMessage("Servicios no disponibles. Verifica tu conexión.");
+      setErrorMessage("Los servicios de Firebase no están listos. Verifica la configuración.");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // 1. Verificar si la cédula ya existe
+      // 1. Verificar si la cédula ya existe en la red nacional
       const idRef = doc(db, 'identifications', formData.idNumber);
       const idSnap = await getDoc(idRef);
       
       if (idSnap.exists()) {
-        setErrorMessage("Esta cédula ya posee un expediente registrado.");
+        setErrorMessage("Esta cédula ya posee un expediente registrado en el sistema nacional.");
         setIsLoading(false);
         return;
       }
 
-      // 2. Crear usuario
+      // 2. Crear usuario en Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const firebaseUser = userCredential.user;
 
+      // 3. Actualizar el perfil básico de Auth
       await updateProfile(firebaseUser, {
         displayName: formData.fullName
       });
 
-      // 3. Guardar en Firestore
+      // 4. Guardar en Firestore: Mapeo de Cédula y Perfil Completo
       const [firstName = '', ...lastNameParts] = formData.fullName.split(' ');
       const lastName = lastNameParts.join(' ');
 
-      // Guardar mapeo de cédula
-      await setDoc(idRef, { userId: firebaseUser.uid });
+      // Guardamos la cédula como documento principal para búsqueda rápida
+      await setDoc(idRef, { userId: firebaseUser.uid, idNumber: formData.idNumber });
       
-      // Guardar perfil completo con Cédula
+      // Guardamos el expediente completo
       await setDoc(doc(db, 'users', firebaseUser.uid), {
         id: firebaseUser.uid,
         username: formData.username,
@@ -90,21 +90,36 @@ export default function Register() {
         lastName: lastName,
         email: formData.email,
         phoneNumber: formData.phone,
-        identificationType: formData.identificationType,
-        idNumber: formData.idNumber, // <-- Cédula guardada aquí
+        identificationType: 'Nacional',
+        idNumber: formData.idNumber,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         bloodType: 'Pendiente',
         allergies: 'Ninguna reportada'
       });
 
-      toast({ title: "Expediente Creado", description: "Registro exitoso en la Red Nacional." });
+      toast({ title: "Expediente Creado", description: "Bienvenido a la Red Nacional de Salud." });
       router.push('/profile');
     } catch (error: any) {
-      let friendlyMessage = "Error al completar el registro.";
-      if (error.code === 'auth/email-already-in-use') friendlyMessage = "Correo ya registrado.";
+      console.error("Error detallado de registro:", error);
+      
+      let friendlyMessage = "Error al completar el registro oficial.";
+      
+      // Mapeo de errores específicos para guiar al usuario
+      if (error.code === 'auth/email-already-in-use') {
+        friendlyMessage = "Este correo electrónico ya está en uso por otro expediente.";
+      } else if (error.code === 'auth/weak-password') {
+        friendlyMessage = "La contraseña es muy débil. Debe tener al menos 6 caracteres.";
+      } else if (error.code === 'auth/operation-not-allowed') {
+        friendlyMessage = "El registro no está habilitado. Por favor, activa 'Email/Password' en Firebase Console.";
+      } else if (error.code === 'permission-denied') {
+        friendlyMessage = "Error de permisos en la base de datos nacional.";
+      } else {
+        friendlyMessage = `Error del Sistema: ${error.code || error.message}`;
+      }
+
       setErrorMessage(friendlyMessage);
-      toast({ title: "Error", description: friendlyMessage, variant: "destructive" });
+      toast({ title: "Error de Registro", description: friendlyMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -116,15 +131,18 @@ export default function Register() {
       <main className="flex-grow flex items-center justify-center py-20 bg-accent/10 px-4">
         <Card className="w-full max-w-2xl shadow-2xl rounded-3xl border-none overflow-hidden">
           <div className="bg-primary p-6 text-white text-center">
-             <h2 className="text-2xl font-bold font-headline">Registro Nacional de Salud</h2>
-             <p className="text-white/80 text-sm">Crea tu expediente digital único</p>
+             <h2 className="text-2xl font-bold font-headline">Portal Nacional de Salud CR</h2>
+             <p className="text-white/80 text-sm">Crea tu expediente digital único para citas médicas</p>
           </div>
           <CardContent className="p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               {errorMessage && (
-                <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-start gap-3 text-destructive">
+                <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-start gap-3 text-destructive animate-in fade-in duration-300">
                   <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
-                  <p className="text-sm font-medium">{errorMessage}</p>
+                  <div className="space-y-1">
+                    <p className="font-bold text-xs uppercase tracking-wider">Aviso del Sistema</p>
+                    <p className="text-sm font-medium">{errorMessage}</p>
+                  </div>
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -132,53 +150,53 @@ export default function Register() {
                   <Label className="text-sm font-bold">Nombre Completo</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input name="fullName" placeholder="Nombre y Apellidos" className="pl-10 h-11 rounded-xl" required value={formData.fullName} onChange={handleChange} />
+                    <Input name="fullName" placeholder="Ej: Esmeralda Molina Segura" className="pl-10 h-11 rounded-xl" required value={formData.fullName} onChange={handleChange} />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold">Nombre de Usuario</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input name="username" placeholder="usuario123" className="pl-10 h-11 rounded-xl" required value={formData.username} onChange={handleChange} />
+                    <Input name="username" placeholder="shura_95" className="pl-10 h-11 rounded-xl" required value={formData.username} onChange={handleChange} />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold">Cédula de Identidad</Label>
                   <div className="relative">
                     <CreditCard className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input name="idNumber" placeholder="1-1111-1111" className="pl-10 h-11 rounded-xl" required value={formData.idNumber} onChange={handleChange} />
+                    <Input name="idNumber" placeholder="2-0885-0663" className="pl-10 h-11 rounded-xl" required value={formData.idNumber} onChange={handleChange} />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-bold">Teléfono</Label>
+                  <Label className="text-sm font-bold">Teléfono de Contacto</Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input name="phone" placeholder="8888-8888" className="pl-10 h-11 rounded-xl" required value={formData.phone} onChange={handleChange} />
+                    <Input name="phone" placeholder="6028-5415" className="pl-10 h-11 rounded-xl" required value={formData.phone} onChange={handleChange} />
                   </div>
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label className="text-sm font-bold">Correo Electrónico</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input name="email" type="email" placeholder="correo@ejemplo.com" className="pl-10 h-11 rounded-xl" required value={formData.email} onChange={handleChange} />
+                    <Input name="email" type="email" placeholder="ejemplo@gmail.com" className="pl-10 h-11 rounded-xl" required value={formData.email} onChange={handleChange} />
                   </div>
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label className="text-sm font-bold">Contraseña</Label>
+                  <Label className="text-sm font-bold">Contraseña Segura</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input name="password" type="password" placeholder="Mínimo 6 caracteres" className="pl-10 h-11 rounded-xl" required value={formData.password} onChange={handleChange} />
                   </div>
                 </div>
               </div>
-              <Button type="submit" className="w-full h-12 text-lg rounded-full shadow-lg" disabled={isLoading}>
+              <Button type="submit" className="w-full h-12 text-lg rounded-full shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Crear Expediente"}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="justify-center border-t py-6 bg-muted/20">
             <p className="text-sm text-muted-foreground">
-              ¿Ya tienes cuenta? <Link href="/auth/login" className="text-primary font-bold hover:underline">Ingresa aquí</Link>
+              ¿Ya tienes un expediente activo? <Link href="/auth/login" className="text-primary font-bold hover:underline">Ingresa aquí</Link>
             </p>
           </CardFooter>
         </Card>
