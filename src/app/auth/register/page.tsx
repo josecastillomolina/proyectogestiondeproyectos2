@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -15,7 +14,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, serverTimestamp, getDoc, setDoc } from 'firebase/firestore';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export default function Register() {
   const router = useRouter();
@@ -51,7 +49,7 @@ export default function Register() {
     setErrorMessage(null);
 
     if (!auth || !db) {
-      setErrorMessage("Los servicios de salud digitales no están disponibles en este momento.");
+      setErrorMessage("Los servicios de salud digitales no están disponibles.");
       return;
     }
 
@@ -60,9 +58,9 @@ export default function Register() {
     try {
       // 1. Verificar unicidad de identificación
       const idRef = doc(db, 'identifications', formData.idNumber);
-      const idSnap = await getDoc(idRef).catch(() => null);
+      const idSnap = await getDoc(idRef);
       
-      if (idSnap && idSnap.exists()) {
+      if (idSnap.exists()) {
         setErrorMessage("Esta identificación ya posee un expediente registrado.");
         setIsLoading(false);
         return;
@@ -72,14 +70,14 @@ export default function Register() {
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const firebaseUser = userCredential.user;
 
-      // 3. Guardar mapeo de identificación
-      await setDoc(idRef, { userId: firebaseUser.uid });
-
-      // 4. Guardar perfil
+      // 3. Guardar mapeo de identificación y Perfil (Estructura completa)
       const [firstName, ...lastNameParts] = formData.fullName.split(' ');
       const lastName = lastNameParts.join(' ');
 
-      setDocumentNonBlocking(doc(db, 'users', firebaseUser.uid), {
+      // Usamos setDoc directamente para la creación inicial para garantizar integridad
+      await setDoc(idRef, { userId: firebaseUser.uid });
+      
+      await setDoc(doc(db, 'users', firebaseUser.uid), {
         id: firebaseUser.uid,
         username: formData.username,
         firstName: firstName || '',
@@ -90,21 +88,20 @@ export default function Register() {
         idNumber: formData.idNumber,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
-      }, { merge: true });
+      });
 
       toast({ title: "Registro Exitoso", description: "Bienvenido al Sistema Nacional de Salud." });
       router.push('/profile');
     } catch (error: any) {
+      console.error(error);
       let friendlyMessage = "No se pudo completar el registro.";
       
       if (error.code === 'auth/email-already-in-use') {
         friendlyMessage = "Este correo electrónico ya está registrado.";
       } else if (error.code === 'auth/weak-password') {
         friendlyMessage = "La contraseña debe tener al menos 6 caracteres.";
-      } else if (error.code === 'auth/invalid-email') {
-        friendlyMessage = "El formato del correo electrónico no es válido.";
       } else {
-        friendlyMessage = "Ocurrió un error al procesar su solicitud. Intente de nuevo.";
+        friendlyMessage = error.message || "Ocurrió un error al procesar su solicitud.";
       }
 
       setErrorMessage(friendlyMessage);

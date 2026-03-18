@@ -12,9 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  User, Activity, ShieldAlert, Calendar, Ticket, MapPin, 
-  Hospital, Loader2, LogOut, Printer, Clock, Stethoscope, 
-  Trash2, Edit3, Save, Phone, Info, CreditCard, AlertTriangle
+  User, Activity, Calendar, Ticket, MapPin, 
+  Loader2, LogOut, Stethoscope, 
+  Trash2, Edit3, Save, CreditCard
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, useAuth } from '@/firebase';
@@ -22,17 +22,6 @@ import { doc, collection } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
-const CANTONS_BY_PROVINCE: Record<string, string[]> = {
-  "San José": ["San José", "Escazú", "Desamparados", "Puriscal", "Tarrazú", "Aserrí", "Mora", "Goicoechea", "Santa Ana", "Alajuelita", "Vázquez de Coronado", "Acosta", "Tibás", "Moravia", "Montes de Oca", "Turrubares", "Dota", "Curridabat", "Pérez Zeledón", "León Cortés Castro"],
-  "Alajuela": ["Alajuela", "San Ramón", "Grecia", "San Mateo", "Atenas", "Naranjo", "Palmares", "Poás", "Orotina", "San Carlos", "Zarcero", "Sarchí", "Upala", "Los Chiles", "Guatuso", "Río Cuarto"],
-  "Cartago": ["Cartago", "Paraíso", "La Unión", "Jiménez", "Turrialba", "Alvarado", "Oreamuno", "El Guarco"],
-  "Heredia": ["Heredia", "Barva", "Santo Domingo", "Santa Bárbara", "San Rafael", "San Isidro", "Belén", "Flores", "San Pablo", "Sarapiquí"],
-  "Guanacaste": ["Liberia", "Nicoya", "Santa Cruz", "Bagaces", "Cañas", "Abangares", "Tilarán", "Nandayure", "La Cruz", "Hojancha"],
-  "Puntarenas": ["Puntarenas", "Esparza", "Buenos Aires", "Montes de Oro", "Osa", "Quepos", "Golfito", "Coto Brus", "Parrita", "Corredores", "Garabito", "Monteverde", "Puerto Jiménez"],
-  "Limón": ["Limón", "Pococí", "Siquirres", "Talamanca", "Matina", "Guácimo"]
-};
-
-const PROVINCES = Object.keys(CANTONS_BY_PROVINCE);
 const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
 export default function Profile() {
@@ -55,20 +44,10 @@ export default function Profile() {
     address: ''
   });
 
-  // GUARD DE AUTENTICACIÓN CON TIMEOUT DE SEGURIDAD
   useEffect(() => {
-    // Si después de 3 segundos no hay usuario y ya no está cargando (o Firebase falló), redirigir.
-    const timeout = setTimeout(() => {
-      if (!user) {
-        router.push('/auth/login');
-      }
-    }, 3000);
-
     if (!isUserLoading && !user) {
       router.push('/auth/login');
     }
-
-    return () => clearTimeout(timeout);
   }, [user, isUserLoading, router]);
 
   const profileRef = useMemoFirebase(() => {
@@ -105,10 +84,6 @@ export default function Profile() {
     router.push('/');
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   const handleUpdateProfile = () => {
     if (!user || !profileRef) return;
     
@@ -120,7 +95,7 @@ export default function Profile() {
     setIsEditingProfile(false);
     toast({
       title: "Perfil Actualizado",
-      description: "Tus datos médicos y personales se han guardado con éxito."
+      description: "Tus datos se han guardado con éxito."
     });
   };
 
@@ -130,12 +105,12 @@ export default function Profile() {
     deleteDocumentNonBlocking(appDocRef);
     toast({
       title: "Cita Cancelada",
-      description: "La cita ha sido eliminada de tu registro.",
+      description: "La cita ha sido eliminada.",
       variant: "destructive"
     });
   };
 
-  if (isUserLoading || isProfileLoading) {
+  if (isUserLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
@@ -149,6 +124,11 @@ export default function Profile() {
 
   if (!user) return null;
 
+  const displayUser = profile?.username || user.displayName || user.email?.split('@')[0] || "usuario";
+  const displayEmail = profile?.email || user.email;
+  const displayId = profile?.idNumber || "Pendiente";
+  const displayFullName = profile ? `${profile.firstName} ${profile.lastName}` : (user.displayName || "Expediente Digital");
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -160,8 +140,8 @@ export default function Profile() {
                 <div className="mx-auto w-20 h-20 rounded-full border-4 border-white overflow-hidden mb-4 bg-white/20 flex items-center justify-center">
                   <User className="h-10 w-10 text-white" />
                 </div>
-                <CardTitle className="text-xl font-headline">{profile?.firstName} {profile?.lastName}</CardTitle>
-                <CardDescription className="text-white/80">@{profile?.username || "usuario"}</CardDescription>
+                <CardTitle className="text-xl font-headline">{displayFullName}</CardTitle>
+                <CardDescription className="text-white/80">@{displayUser}</CardDescription>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
                 <div className="space-y-4">
@@ -169,12 +149,12 @@ export default function Profile() {
                       <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Identificación</p>
                       <p className="text-sm font-bold flex items-center gap-2">
                         <CreditCard className="h-3 w-3 text-primary" />
-                        {profile?.idNumber} ({profile?.identificationType})
+                        {displayId}
                       </p>
                    </div>
                    <div className="space-y-1">
                       <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Email</p>
-                      <p className="text-sm text-foreground font-medium truncate">{profile?.email}</p>
+                      <p className="text-sm text-foreground font-medium truncate">{displayEmail}</p>
                    </div>
                    <div className="space-y-1">
                       <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Residencia</p>
@@ -234,7 +214,7 @@ export default function Profile() {
                                 </div>
                               </div>
                               <div className="flex gap-2">
-                                <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setSelectedApp(app)}>Ver Comprobante</Button>
+                                <Button variant="outline" className="flex-1 rounded-xl">Ver Comprobante</Button>
                                 <Button variant="ghost" size="icon" className="rounded-xl text-destructive" onClick={() => handleDeleteAppointment(app.id)}><Trash2 className="h-4 w-4" /></Button>
                               </div>
                             </CardContent>
@@ -258,7 +238,7 @@ export default function Profile() {
                         <Activity className="h-12 w-12 text-primary" />
                         <div>
                             <h3 className="font-bold text-xl">Expediente Médico Nacional</h3>
-                            <p className="text-sm text-muted-foreground">Información vital vinculada a su identificación única.</p>
+                            <p className="text-sm text-muted-foreground">Información vital vinculada a su identificación.</p>
                         </div>
                       </div>
                     </div>
@@ -269,7 +249,7 @@ export default function Profile() {
                        </Card>
                        <Card className="p-6 rounded-2xl bg-muted/30 border-none shadow-sm space-y-3">
                           <p className="text-xs font-bold text-muted-foreground uppercase">Alergias</p>
-                          <p className="text-lg font-bold text-foreground">{profile?.allergies || "Ninguna reportada"}</p>
+                          <p className="text-lg font-bold text-foreground">{profile?.allergies || "Ninguna"}</p>
                        </Card>
                     </div>
                   </Card>
@@ -279,18 +259,17 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Edit Profile Dialog */}
         <Dialog open={isEditingProfile} onOpenChange={setIsEditingProfile}>
           <DialogContent className="max-w-xl rounded-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-2xl font-bold font-headline">Actualizar Expediente</DialogTitle>
-              <DialogDescription>Completa tu información médica y personal para agilizar tus citas.</DialogDescription>
+              <DialogDescription>Completa tu información para agilizar tus citas.</DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
               <div className="space-y-2">
                 <Label htmlFor="bloodType">Grupo Sanguíneo</Label>
                 <Select value={profileData.bloodType} onValueChange={(val) => setProfileData({...profileData, bloodType: val})}>
-                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Selecciona tipo" /></SelectTrigger>
+                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Selecciona" /></SelectTrigger>
                   <SelectContent>{BLOOD_TYPES.map(bt => <SelectItem key={bt} value={bt}>{bt}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
@@ -299,7 +278,7 @@ export default function Profile() {
             </div>
             <DialogFooter className="gap-2">
               <Button variant="outline" className="rounded-full" onClick={() => setIsEditingProfile(false)}>Cancelar</Button>
-              <Button className="rounded-full px-8" onClick={handleUpdateProfile}><Save className="h-4 w-4 mr-2" /> Guardar Cambios</Button>
+              <Button className="rounded-full px-8" onClick={handleUpdateProfile}><Save className="h-4 w-4 mr-2" /> Guardar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
