@@ -9,8 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Mail, Lock, Phone, ArrowLeft, Loader2, CreditCard, AlertCircle } from 'lucide-react';
+import { User, Mail, Lock, Phone, ArrowLeft, Loader2, CreditCard, AlertCircle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -31,7 +30,7 @@ export default function Register() {
     password: '',
     fullName: '',
     phone: '',
-    identificationType: '',
+    identificationType: 'Nacional',
     idNumber: ''
   });
 
@@ -51,7 +50,7 @@ export default function Register() {
     setErrorMessage(null);
 
     if (!auth || !db) {
-      setErrorMessage("Error de configuración: Firebase no está inicializado. Verifica Netlify.");
+      setErrorMessage("Firebase no está configurado correctamente. Realiza un 'Deploy project without cache' en Netlify.");
       return;
     }
 
@@ -64,7 +63,6 @@ export default function Register() {
       
       if (idSnap && idSnap.exists()) {
         setErrorMessage("Esta identificación ya está registrada.");
-        toast({ title: "Registro Duplicado", description: "La cédula ya existe.", variant: "destructive" });
         setIsLoading(false);
         return;
       }
@@ -93,20 +91,26 @@ export default function Register() {
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      toast({ title: "Registro Exitoso", description: "Expediente creado." });
+      toast({ title: "Registro Exitoso", description: "Tu expediente digital ha sido creado." });
       router.push('/profile');
     } catch (error: any) {
       console.error("Register Error:", error);
-      let friendlyMessage = `Error (${error.code || 'unknown'}): No se pudo completar el registro.`;
       
-      if (error.code === 'auth/email-already-in-use') {
+      let friendlyMessage = "No se pudo completar el registro.";
+      
+      // Mapeo de errores específicos para guiar al usuario/admin
+      if (error.code?.includes('api-key-not-valid')) {
+        friendlyMessage = "Configuración de acceso inválida (API Key). Por favor, revisa tus variables en Netlify y realiza un 'Deploy project without cache'.";
+      } else if (error.code === 'auth/email-already-in-use') {
         friendlyMessage = "Este correo ya está en uso.";
       } else if (error.code === 'auth/weak-password') {
         friendlyMessage = "La contraseña es muy débil (mínimo 6 caracteres).";
-      } else if (error.code === 'auth/operation-not-allowed') {
-        friendlyMessage = "El método de registro por correo no está activado en Firebase.";
       } else if (error.code === 'auth/network-request-failed') {
-        friendlyMessage = "Error de red. Verifica tu conexión.";
+        friendlyMessage = "Fallo de conexión. Verifica que las llaves de Firebase en Netlify sean correctas.";
+      } else if (error.message?.includes('offline')) {
+        friendlyMessage = "El sistema no pudo conectar con los servidores nacionales de salud. Verifica tu conexión.";
+      } else {
+        friendlyMessage = `Error (${error.code || 'desconocido'}): ${error.message}`;
       }
 
       setErrorMessage(friendlyMessage);
@@ -122,17 +126,17 @@ export default function Register() {
       <main className="flex-grow flex items-center justify-center py-20 bg-accent/10 px-4">
         <Card className="w-full max-w-2xl shadow-2xl rounded-3xl border-none overflow-hidden">
           <div className="bg-primary p-6 text-white text-center">
-             <h2 className="text-2xl font-bold font-headline">Registro de Salud</h2>
-             <p className="text-white/80 text-sm">Crea tu expediente digital</p>
+             <h2 className="text-2xl font-bold font-headline">Registro de Salud Nacional</h2>
+             <p className="text-white/80 text-sm">Crea tu expediente digital único</p>
           </div>
           <CardContent className="p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               {errorMessage && (
-                <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-start gap-3 text-destructive text-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-start gap-3 text-destructive animate-in fade-in slide-in-from-top-2 duration-300">
                   <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                   <div className="space-y-1">
                     <p className="font-bold text-xs uppercase tracking-wider">Aviso del Sistema</p>
-                    <p className="leading-relaxed font-medium">{errorMessage}</p>
+                    <p className="leading-relaxed text-sm font-medium">{errorMessage}</p>
                   </div>
                 </div>
               )}
@@ -153,25 +157,25 @@ export default function Register() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="idNumber" className="text-sm font-bold">Número ID</Label>
+                  <Label htmlFor="idNumber" className="text-sm font-bold">Número de Cédula</Label>
                   <div className="relative">
                     <CreditCard className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input id="idNumber" name="idNumber" placeholder="1-1111-1111" className="pl-10 h-11 rounded-xl" required value={formData.idNumber} onChange={handleChange} />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-sm font-bold">Teléfono</Label>
+                  <Label htmlFor="phone" className="text-sm font-bold">Teléfono de Contacto</Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input id="phone" name="phone" placeholder="8888-8888" className="pl-10 h-11 rounded-xl" required value={formData.phone} onChange={handleChange} />
                   </div>
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="email" className="text-sm font-bold">Correo Electrónico</Label>
+                  <Label htmlFor="email" className="text-sm font-bold">Correo Electrónico Oficial</Label>
                   <Input id="email" name="email" type="email" placeholder="correo@ejemplo.com" className="h-11 rounded-xl" required value={formData.email} onChange={handleChange} />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="password" title="password" className="text-sm font-bold">Contraseña</Label>
+                  <Label htmlFor="password" title="password" className="text-sm font-bold">Nueva Contraseña</Label>
                   <Input id="password" name="password" type="password" placeholder="Mínimo 6 caracteres" className="h-11 rounded-xl" required value={formData.password} onChange={handleChange} />
                 </div>
               </div>
@@ -181,17 +185,17 @@ export default function Register() {
                   className="w-full h-12 text-lg rounded-full shadow-lg" 
                   disabled={isLoading}
                 >
-                  {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Registrarse"}
+                  {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Crear Expediente"}
                 </Button>
-                <Button type="button" variant="ghost" className="w-full rounded-full" onClick={() => router.push('/')}>
-                  Volver al Inicio
+                <Button type="button" variant="ghost" className="w-full rounded-full" onClick={() => router.push('/')} disabled={isLoading}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Volver al Inicio
                 </Button>
               </div>
             </form>
           </CardContent>
           <CardFooter className="justify-center border-t py-6 bg-muted/20">
             <p className="text-sm text-muted-foreground">
-              ¿Ya tienes cuenta? <Link href="/auth/login" className="text-primary font-bold hover:underline">Accede</Link>
+              ¿Ya tienes cuenta activa? <Link href="/auth/login" className="text-primary font-bold hover:underline">Inicia Sesión</Link>
             </p>
           </CardFooter>
         </Card>

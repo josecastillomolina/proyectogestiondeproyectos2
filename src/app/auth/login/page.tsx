@@ -37,7 +37,7 @@ export default function Login() {
     setErrorMessage(null);
 
     if (!auth) {
-      setErrorMessage("El sistema de autenticación no está listo. Verifica las variables en Netlify.");
+      setErrorMessage("Sistema de acceso no inicializado. Por favor, realiza un 'Deploy project without cache' en Netlify.");
       return;
     }
 
@@ -45,22 +45,27 @@ export default function Login() {
 
     try {
       await signInWithEmailAndPassword(auth, formData.email, formData.password);
-      toast({ title: "Acceso Exitoso", description: "Bienvenido de vuelta." });
+      toast({ title: "Acceso Exitoso", description: "Bienvenido de nuevo al portal nacional." });
       router.push('/profile');
     } catch (error: any) {
       console.error("Login Error:", error);
-      let friendlyError = `Error (${error.code || 'unknown'}): No se pudo iniciar sesión.`;
       
-      if (error.code === 'auth/invalid-credential') {
-        friendlyError = "Correo o contraseña incorrectos.";
+      let friendlyError = "No se pudo iniciar sesión.";
+      
+      if (error.code?.includes('api-key-not-valid')) {
+        friendlyError = "La llave de acceso al sistema es inválida. Revisa las variables de entorno en Netlify.";
+      } else if (error.code === 'auth/invalid-credential') {
+        friendlyError = "Correo electrónico o contraseña incorrectos.";
       } else if (error.code === 'auth/user-not-found') {
-        friendlyError = "Usuario no encontrado.";
+        friendlyError = "No se encontró un expediente con este correo.";
       } else if (error.code === 'auth/wrong-password') {
-        friendlyError = "Contraseña incorrecta.";
+        friendlyError = "La contraseña ingresada es incorrecta.";
       } else if (error.code === 'auth/too-many-requests') {
-        friendlyError = "Demasiados intentos. Intenta más tarde.";
+        friendlyError = "Demasiados intentos fallidos. Tu cuenta ha sido bloqueada temporalmente.";
       } else if (error.code === 'auth/network-request-failed') {
-        friendlyError = "Error de red. Verifica tu conexión.";
+        friendlyError = "Error de red. Verifica la configuración de Firebase en Netlify.";
+      } else {
+        friendlyError = `Error (${error.code || 'desconocido'}): ${error.message}`;
       }
       
       setErrorMessage(friendlyError);
@@ -81,17 +86,17 @@ export default function Login() {
             </div>
             <CardTitle className="text-3xl font-bold font-headline text-foreground tracking-tight">Acceso al Portal</CardTitle>
             <CardDescription className="text-base text-muted-foreground">
-              Ingresa para gestionar tus citas médicas.
+              Ingresa tus credenciales para gestionar tu salud.
             </CardDescription>
           </CardHeader>
           <CardContent className="px-8 pb-8">
             <form onSubmit={handleSubmit} className="space-y-5">
               {errorMessage && (
-                <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-start gap-3 text-destructive text-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-start gap-3 text-destructive animate-in fade-in slide-in-from-top-2 duration-300">
                   <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                   <div className="space-y-1">
                     <p className="font-bold text-xs uppercase tracking-wider">Aviso del Sistema</p>
-                    <p className="leading-relaxed">{errorMessage}</p>
+                    <p className="leading-relaxed text-sm font-medium">{errorMessage}</p>
                   </div>
                 </div>
               )}
@@ -136,7 +141,7 @@ export default function Login() {
                 >
                   {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Ingresar"}
                 </Button>
-                <Button type="button" variant="ghost" className="w-full rounded-full" onClick={() => router.push('/')}>
+                <Button type="button" variant="ghost" className="w-full rounded-full" onClick={() => router.push('/')} disabled={isLoading}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Volver al Inicio
                 </Button>
               </div>
@@ -144,7 +149,7 @@ export default function Login() {
           </CardContent>
           <CardFooter className="flex flex-col gap-4 border-t py-6 bg-muted/20">
             <p className="text-sm text-muted-foreground text-center">
-              ¿No tienes cuenta? <Link href="/auth/register" className="text-primary font-bold hover:underline">Regístrate</Link>
+              ¿No tienes cuenta activa? <Link href="/auth/register" className="text-primary font-bold hover:underline">Regístrate aquí</Link>
             </p>
           </CardFooter>
         </Card>

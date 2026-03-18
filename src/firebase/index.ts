@@ -6,20 +6,34 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 /**
- * Inicializa los SDKs de Firebase.
- * Se ha simplificado para asegurar que siempre intente conectar si hay una configuración básica.
+ * Diagnóstico seguro de configuración.
+ */
+export function checkConfig() {
+  if (typeof window === 'undefined') return {};
+  return {
+    hasApiKey: !!firebaseConfig.apiKey && firebaseConfig.apiKey.length > 5,
+    hasProjectId: !!firebaseConfig.projectId,
+    hasAppId: !!firebaseConfig.appId,
+    env: process.env.NODE_ENV
+  };
+}
+
+/**
+ * Inicializa los SDKs de Firebase con validación de entorno.
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
+  // Log de diagnóstico para el desarrollador (Visible en consola F12)
+  console.log('[Firebase Diagnostic]', checkConfig());
+
   try {
     let firebaseApp: FirebaseApp;
 
-    // Verificar si ya hay una instancia para evitar el error de "duplicate app"
     if (!getApps().length) {
-      // Intentar inicializar con la configuración importada
+      // Si la API Key no es válida (ej. undefined o muy corta), Firebase lanzará un error al inicializar
       firebaseApp = initializeApp(firebaseConfig);
     } else {
       firebaseApp = getApp();
@@ -31,7 +45,7 @@ export function initializeFirebase() {
       firestore: getFirestore(firebaseApp)
     };
   } catch (error) {
-    console.error('[Firebase] Fallo al inicializar:', error);
+    console.error('[Firebase] Error de inicialización crítica:', error);
     return { firebaseApp: null, auth: null, firestore: null };
   }
 }
