@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { 
   User, LogOut, Loader2, Mail, CreditCard, ShieldCheck, 
-  Phone, Calendar, Printer, Hospital, Stethoscope, Clock, Edit3, Save
+  Phone, Calendar, Printer, Hospital, Stethoscope, Clock, Edit3, Save, MapPin
 } from 'lucide-react';
 import { useUser, useDoc } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -145,6 +145,10 @@ export default function Profile() {
             .grid { display: grid; grid-template-cols: 1fr 1fr; gap: 10px; }
             .item { font-size: 14px; margin-bottom: 8px; }
             .label { color: #64748b; font-size: 12px; }
+            @media print {
+              .no-print { display: none; }
+              body { padding: 0; margin: 0; }
+            }
           </style>
         </head>
         <body>
@@ -168,11 +172,18 @@ export default function Profile() {
           <div class="section">
             <div class="section-title">Detalles de la Cita</div>
             <div class="grid">
-              <div class="item"><div class="label">Sede Médica</div>${appointment.healthCenterName || appointment.hospital}</div>
+              <div class="item"><div class="label">Sede Médica</div>${appointment.centroSalud?.nombre || appointment.healthCenterName || appointment.hospital}</div>
               <div class="item"><div class="label">Especialidad</div>${appointment.specialty || appointment.especialidad}</div>
               <div class="item"><div class="label">Fecha</div>${fechaFormat}</div>
               <div class="item"><div class="label">Hora</div>${horaFormat}</div>
             </div>
+            <div class="item" style="margin-top: 10px;">
+              <div class="label">Dirección de la Sede</div>
+              ${appointment.centroSalud?.direccion || 'Consulte en el portal nacional'}
+            </div>
+          </div>
+          <div style="margin-top: 40px; border-top: 1px dashed #ccc; padding-top: 20px; font-size: 12px; text-align: center; color: #666;">
+            Presentar este comprobante el día de la cita. Generado el: ${new Date().toLocaleDateString()}
           </div>
           <script>window.print(); window.close();</script>
         </body>
@@ -292,30 +303,35 @@ export default function Profile() {
 
               <div className="space-y-4">
                 <h3 className="text-2xl font-bold font-headline flex items-center gap-2">
-                  <Calendar className="h-6 w-6 text-primary" /> Citas del Historial
+                  <Calendar className="h-6 w-6 text-primary" /> Historial de Citas Nacionales
                 </h3>
                 {appointments.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {appointments.map((cita) => (
-                      <Card key={cita.id} className="rounded-3xl border-none shadow-md bg-white">
+                      <Card key={cita.id} className="rounded-3xl border-none shadow-md bg-white overflow-hidden">
                         <div className="p-6 space-y-4">
                           <div className="flex justify-between items-start">
-                            <Hospital className="h-8 w-8 text-primary/50" />
+                            <div className="bg-primary/10 p-2 rounded-lg">
+                              <Hospital className="h-6 w-6 text-primary" />
+                            </div>
                             <div className="text-right">
-                              <p className="text-[10px] font-bold text-muted-foreground uppercase">Voucher</p>
+                              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Número Confirmación</p>
                               <p className="font-mono font-bold text-primary">{cita.voucherCode || cita.numeroConfirmacion}</p>
                             </div>
                           </div>
-                          <h4 className="font-bold text-lg">{cita.healthCenterName || cita.hospital}</h4>
-                          <p className="text-sm font-medium flex items-center gap-2"><Stethoscope className="h-4 w-4" /> {cita.specialty || cita.especialidad}</p>
+                          <div>
+                            <h4 className="font-bold text-lg leading-tight">{cita.centroSalud?.nombre || cita.healthCenterName || cita.hospital}</h4>
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><MapPin className="h-3 w-3" /> {cita.centroSalud?.direccion || 'Sede Regional'}</p>
+                          </div>
+                          <p className="text-sm font-medium flex items-center gap-2"><Stethoscope className="h-4 w-4 text-primary" /> {cita.specialty || cita.especialidad}</p>
                           <div className="flex gap-4 text-xs bg-muted/30 p-2 rounded-xl">
                             <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {new Date(cita.appointmentDateTime || cita.fecha).toLocaleDateString()}</span>
                             <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {new Date(cita.appointmentDateTime || cita.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                           </div>
                           <div className="flex items-center justify-between pt-2">
-                            <span className="text-[10px] font-bold px-2 py-0.5 bg-green-100 text-green-700 rounded-full uppercase">{cita.status || cita.estado}</span>
-                            <Button variant="ghost" size="sm" className="h-8 gap-2 text-xs" onClick={() => handlePrintVoucher(cita)}>
-                              <Printer className="h-3 w-3" /> Imprimir
+                            <span className="text-[10px] font-bold px-3 py-1 bg-green-100 text-green-700 rounded-full uppercase tracking-widest">{cita.status || cita.estado}</span>
+                            <Button variant="ghost" size="sm" className="h-8 gap-2 text-xs font-bold hover:bg-primary/5 hover:text-primary rounded-full" onClick={() => handlePrintVoucher(cita)}>
+                              <Printer className="h-3 w-3" /> Imprimir Comprobante
                             </Button>
                           </div>
                         </div>
@@ -323,10 +339,12 @@ export default function Profile() {
                     ))}
                   </div>
                 ) : (
-                  <Card className="rounded-[35px] border-2 border-dashed p-10 text-center bg-white">
-                    <Calendar className="h-12 w-12 text-muted/20 mx-auto mb-4" />
-                    <p className="text-muted-foreground mb-4 italic">No hay citas registradas en tu expediente.</p>
-                    <Button className="rounded-full" onClick={() => router.push('/appointments')}>Agendar Nueva Cita</Button>
+                  <Card className="rounded-[35px] border-2 border-dashed p-12 text-center bg-white">
+                    <div className="bg-muted/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-muted-foreground/30">
+                      <Calendar className="h-8 w-8" />
+                    </div>
+                    <p className="text-muted-foreground mb-6 italic">No hay citas pendientes agendadas en tu expediente nacional.</p>
+                    <Button className="rounded-full px-8 h-12 font-bold shadow-lg" onClick={() => router.push('/appointments')}>Agendar en Hospital →</Button>
                   </Card>
                 )}
               </div>

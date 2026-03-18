@@ -2,17 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Calendar, MapPin, Stethoscope, Loader2, CheckCircle2, Hospital, User, Clock, AlertTriangle } from 'lucide-react';
+import { Calendar, MapPin, Stethoscope, Loader2, CheckCircle2, Hospital, User, Clock, AlertTriangle, Phone } from 'lucide-react';
 import { useUser, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
+import { CENTROS_SALUD, CentroSalud } from '@/data/centrosSalud';
 
 const PROVINCES = ["San José", "Alajuela", "Cartago", "Heredia", "Guanacaste", "Puntarenas", "Limón"];
 const SPECIALTIES = ["Medicina General", "Pediatría", "Ginecología", "Odontología", "Psicología", "Nutrición"];
@@ -56,15 +58,6 @@ const DOCTORS: Record<string, string[]> = {
   "Nutrición": ["Dra. Sofía Jiménez"]
 };
 
-const HEALTH_CENTERS = [
-  { id: "h-mexico", name: "Hospital México", province: "San José", type: "Hospital Nacional" },
-  { id: "h-calderon", name: "Hospital Calderón Guardia", province: "San José", type: "Hospital Nacional" },
-  { id: "h-baltodano", name: "Hospital Enrique Baltodano", province: "Guanacaste", type: "Hospital Nacional" },
-  { id: "h-max", name: "Hospital Max Peralta", province: "Cartago", type: "Hospital Nacional" },
-  { id: "h-svpaul", name: "Hospital San Vicente de Paúl", province: "Heredia", type: "Hospital Nacional" },
-  { id: "h-monseñor", name: "Hospital Monseñor Sanabria", province: "Puntarenas", type: "Hospital Nacional" }
-];
-
 export default function Appointments() {
   const router = useRouter();
   const { user } = useUser();
@@ -73,18 +66,22 @@ export default function Appointments() {
   
   const [province, setProvince] = useState('');
   const [specialty, setSpecialty] = useState('');
+  const [selectedCenter, setSelectedCenter] = useState<CentroSalud | null>(null);
   const [selectedReason, setSelectedReason] = useState<{ label: string, severity: 'high' | 'standard' } | null>(null);
   const [isBooking, setIsBooking] = useState(false);
   const [bookedAppointment, setBookedAppointment] = useState<any>(null);
 
   const availableReasons = specialty ? REASONS_BY_SPECIALTY[specialty] || [] : [];
+  const filteredCenters = province ? CENTROS_SALUD.filter(c => c.provincia === province) : [];
 
   useEffect(() => {
     setSelectedReason(null);
   }, [specialty]);
 
-  const suggestedCenter = HEALTH_CENTERS.find(c => c.province === province) || HEALTH_CENTERS[0];
-  
+  useEffect(() => {
+    setSelectedCenter(null);
+  }, [province]);
+
   const getSuggestedDate = (severity: string) => {
     const d = new Date();
     d.setDate(d.getDate() + (severity === 'high' ? 2 : 14));
@@ -106,8 +103,8 @@ export default function Appointments() {
       return;
     }
 
-    if (!province || !specialty || !selectedReason) {
-      toast({ title: "Datos Incompletos", description: "Elige provincia, especialidad y motivo.", variant: "destructive" });
+    if (!province || !specialty || !selectedReason || !selectedCenter) {
+      toast({ title: "Datos Incompletos", description: "Elige provincia, centro médico, especialidad y motivo.", variant: "destructive" });
       return;
     }
 
@@ -120,8 +117,15 @@ export default function Appointments() {
     const newAppointment = {
       id: appointmentId,
       userId: user?.uid || 'local-user',
-      healthCenterId: suggestedCenter.id,
-      healthCenterName: suggestedCenter.name,
+      healthCenterId: selectedCenter.id,
+      healthCenterName: selectedCenter.nombre,
+      centroSalud: {
+        nombre: selectedCenter.nombre,
+        tipo: selectedCenter.tipo,
+        direccion: selectedCenter.direccion,
+        telefono: selectedCenter.telefono,
+        imagen: selectedCenter.imagen
+      },
       specialty: specialty,
       doctorName: doctorName,
       appointmentDateTime: appointmentDate.toISOString(),
@@ -205,6 +209,18 @@ export default function Appointments() {
                   </div>
 
                   <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><Hospital className="h-4 w-4" /> Centro de Salud</Label>
+                    <Select onValueChange={(v) => setSelectedCenter(filteredCenters.find(c => c.id === v) || null)} disabled={!province}>
+                      <SelectTrigger className="rounded-xl h-12">
+                        <SelectValue placeholder="Elegir centro médico" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredCenters.map(c => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label className="flex items-center gap-2"><Stethoscope className="h-4 w-4" /> Especialidad</Label>
                     <Select onValueChange={setSpecialty}>
                       <SelectTrigger className="rounded-xl h-12">
@@ -229,23 +245,42 @@ export default function Appointments() {
                   </div>
                 </div>
 
-                <Button className="w-full h-14 rounded-full text-lg shadow-lg" onClick={handleBooking} disabled={isBooking || !province || !specialty || !selectedReason}>
+                <Button className="w-full h-14 rounded-full text-lg shadow-lg" onClick={handleBooking} disabled={isBooking || !province || !specialty || !selectedReason || !selectedCenter}>
                   {isBooking ? <Loader2 className="animate-spin" /> : "Confirmar Cita"}
                 </Button>
               </div>
 
               <div className="bg-primary p-8 text-white flex flex-col justify-center space-y-6">
-                <Hospital className="h-12 w-12" />
-                <h3 className="text-2xl font-bold font-headline">Red Nacional</h3>
-                {province ? (
-                  <div className="space-y-4">
-                    <div className="bg-white/10 p-4 rounded-2xl border border-white/20">
-                      <p className="text-xs uppercase opacity-70">Sede más cercana</p>
-                      <p className="text-xl font-bold">{suggestedCenter.name}</p>
+                {selectedCenter ? (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                    <div className="relative h-40 w-full rounded-2xl overflow-hidden shadow-lg border border-white/20">
+                      <Image 
+                        src={selectedCenter.imagen} 
+                        alt={selectedCenter.nombre} 
+                        fill 
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-2xl font-bold font-headline leading-tight">{selectedCenter.nombre}</h3>
+                        <span className="inline-block px-3 py-1 bg-white/20 rounded-full text-[10px] font-bold uppercase mt-2 border border-white/10 tracking-widest">
+                          {selectedCenter.tipo}
+                        </span>
+                      </div>
+                      <div className="space-y-2 text-sm opacity-90">
+                        <p className="flex items-start gap-2"><MapPin className="h-4 w-4 shrink-0 mt-0.5" /> {selectedCenter.direccion}</p>
+                        <p className="flex items-center gap-2"><Phone className="h-4 w-4 shrink-0" /> {selectedCenter.telefono}</p>
+                        <p className="flex items-center gap-2"><Clock className="h-4 w-4 shrink-0" /> {selectedCenter.horario}</p>
+                      </div>
                     </div>
                   </div>
                 ) : (
-                  <p className="opacity-80 italic">Completa el formulario para encontrar disponibilidad en tu región.</p>
+                  <div className="space-y-6">
+                    <Hospital className="h-12 w-12" />
+                    <h3 className="text-2xl font-bold font-headline">Red Nacional</h3>
+                    <p className="opacity-80 italic">Selecciona una provincia y un centro médico para ver la información detallada de la sede.</p>
+                  </div>
                 )}
               </div>
             </div>
