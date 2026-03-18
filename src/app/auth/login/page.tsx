@@ -38,7 +38,7 @@ export default function Login() {
     setErrorMessage(null);
 
     if (!auth) {
-      setErrorMessage("El sistema de acceso no está listo. Por favor, en Netlify realiza un 'Deploy project without cache' para activar las llaves de Firebase.");
+      setErrorMessage("El servicio de autenticación no está disponible.");
       return;
     }
 
@@ -49,22 +49,21 @@ export default function Login() {
       toast({ title: "Acceso Exitoso", description: "Bienvenido de nuevo al portal nacional." });
       router.push('/profile');
     } catch (error: any) {
-      console.error("Login Error:", error);
-      
+      // Manejamos el error de forma silenciosa para el sistema de logs, pero informamos al usuario
       let friendlyError = "No se pudo iniciar sesión.";
       
-      if (error.code?.includes('api-key-not-valid')) {
-        friendlyError = "La llave de acceso de Firebase no es válida. Revisa Netlify y haz un despliegue sin caché.";
-      } else if (error.code === 'auth/invalid-credential') {
-        friendlyError = "Correo electrónico o contraseña incorrectos.";
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        friendlyError = "Correo electrónico o contraseña incorrectos. Verifica tus datos e intenta de nuevo.";
       } else if (error.code === 'auth/too-many-requests') {
-        friendlyError = "Demasiados intentos fallidos. Intenta más tarde.";
+        friendlyError = "Demasiados intentos fallidos. Tu cuenta ha sido bloqueada temporalmente.";
+      } else if (error.code === 'auth/api-key-not-valid') {
+        friendlyError = "Error de configuración técnica (API Key). Contacte a soporte.";
       } else {
-        friendlyError = error.message || "Error desconocido al ingresar.";
+        friendlyError = "Error al intentar ingresar. Por favor intente más tarde.";
       }
       
       setErrorMessage(friendlyError);
-      toast({ title: "Error de Ingreso", description: friendlyError, variant: "destructive" });
+      toast({ title: "Aviso de Ingreso", description: friendlyError, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }

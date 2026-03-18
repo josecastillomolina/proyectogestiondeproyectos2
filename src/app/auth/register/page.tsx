@@ -51,7 +51,7 @@ export default function Register() {
     setErrorMessage(null);
 
     if (!auth || !db) {
-      setErrorMessage("La configuración de Firebase no se ha cargado. En Netlify, ve a Deploys -> Trigger deploy -> Deploy project without cache.");
+      setErrorMessage("Los servicios de salud digitales no están disponibles en este momento.");
       return;
     }
 
@@ -63,7 +63,7 @@ export default function Register() {
       const idSnap = await getDoc(idRef).catch(() => null);
       
       if (idSnap && idSnap.exists()) {
-        setErrorMessage("Esta identificación ya está registrada en el sistema nacional.");
+        setErrorMessage("Esta identificación ya posee un expediente registrado.");
         setIsLoading(false);
         return;
       }
@@ -92,21 +92,19 @@ export default function Register() {
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      toast({ title: "Registro Exitoso", description: "Tu expediente digital ha sido creado correctamente." });
+      toast({ title: "Registro Exitoso", description: "Bienvenido al Sistema Nacional de Salud." });
       router.push('/profile');
     } catch (error: any) {
-      console.error("Register Error:", error);
-      
       let friendlyMessage = "No se pudo completar el registro.";
       
-      if (error.code?.includes('api-key-not-valid')) {
-        friendlyMessage = "La llave de acceso de Firebase no es válida. Revisa tu configuración en Netlify y redespliega sin caché.";
-      } else if (error.code === 'auth/email-already-in-use') {
-        friendlyMessage = "Este correo ya está registrado en el portal.";
+      if (error.code === 'auth/email-already-in-use') {
+        friendlyMessage = "Este correo electrónico ya está registrado.";
       } else if (error.code === 'auth/weak-password') {
-        friendlyMessage = "La contraseña es muy débil (mínimo 6 caracteres).";
+        friendlyMessage = "La contraseña debe tener al menos 6 caracteres.";
+      } else if (error.code === 'auth/invalid-email') {
+        friendlyMessage = "El formato del correo electrónico no es válido.";
       } else {
-        friendlyMessage = error.message || "Error desconocido al registrar.";
+        friendlyMessage = "Ocurrió un error al procesar su solicitud. Intente de nuevo.";
       }
 
       setErrorMessage(friendlyMessage);
