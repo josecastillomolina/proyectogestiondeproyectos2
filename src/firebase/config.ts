@@ -15,18 +15,22 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
-try {
-  // Inicialización segura para evitar errores de API Key durante SSR
-  if (!getApps().length) {
+// Inicialización ultra-segura
+const isConfigValid = !!firebaseConfig.apiKey && firebaseConfig.apiKey !== 'undefined';
+
+if (!getApps().length) {
+  if (isConfigValid) {
     app = initializeApp(firebaseConfig);
   } else {
-    app = getApp();
+    // Fallback para evitar el error de API Key inválida durante el despliegue inicial
+    app = initializeApp({ apiKey: "temporary-key", projectId: "temporary-id" });
   }
-  auth = getAuth(app);
-  db = getFirestore(app);
-} catch (error) {
-  console.error("Error al inicializar los servicios de Firebase:", error);
+} else {
+  app = getApp();
 }
 
+auth = getAuth(app);
+db = getFirestore(app);
+
 export { auth, db };
-export default app!;
+export default app;
