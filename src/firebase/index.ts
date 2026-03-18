@@ -7,7 +7,7 @@ import { getFirestore } from 'firebase/firestore';
 
 /**
  * Diagnóstico seguro de configuración.
- * Verifica si las variables existen sin exponer sus valores.
+ * Verifica si las variables existen sin exponer sus valores reales.
  */
 export function checkConfig() {
   if (typeof window === 'undefined') return {};
@@ -28,14 +28,14 @@ export function initializeFirebase() {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
-  // Log de diagnóstico visible en la consola del navegador (F12)
-  console.log('[Firebase Config Diagnostic]', checkConfig());
+  const configStatus = checkConfig();
+  console.log('[Firebase Diagnostic]', configStatus);
 
   try {
     let firebaseApp: FirebaseApp;
 
     if (!getApps().length) {
-      // Intentar inicializar. Si los valores son undefined, fallará aquí o en el primer uso.
+      // Si la API Key no existe o es 'undefined', el SDK lanzará el error de API Key inválida
       firebaseApp = initializeApp(firebaseConfig);
     } else {
       firebaseApp = getApp();
@@ -47,7 +47,7 @@ export function initializeFirebase() {
       firestore: getFirestore(firebaseApp)
     };
   } catch (error) {
-    console.error('[Firebase] Error crítico de inicialización:', error);
+    console.error('[Firebase] Error de inicialización:', error);
     return { firebaseApp: null, auth: null, firestore: null };
   }
 }

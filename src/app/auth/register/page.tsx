@@ -50,8 +50,8 @@ export default function Register() {
     setErrorMessage(null);
 
     // Verificación de configuración antes de intentar registrar
-    if (!auth || !db || !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
-      setErrorMessage("Configuración ausente. Por favor, ve a Netlify y haz clic en 'Deploy project without cache' para activar las llaves.");
+    if (!auth || !db) {
+      setErrorMessage("Sistema no listo. Realiza un 'Deploy project without cache' en Netlify para activar las llaves.");
       return;
     }
 
@@ -63,7 +63,7 @@ export default function Register() {
       const idSnap = await getDoc(idRef).catch(() => null);
       
       if (idSnap && idSnap.exists()) {
-        setErrorMessage("Esta identificación ya está registrada.");
+        setErrorMessage("Esta identificación ya está registrada en el sistema nacional.");
         setIsLoading(false);
         return;
       }
@@ -92,19 +92,21 @@ export default function Register() {
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      toast({ title: "Registro Exitoso", description: "Tu expediente digital ha sido creado." });
+      toast({ title: "Registro Exitoso", description: "Tu expediente digital ha sido creado correctamente." });
       router.push('/profile');
     } catch (error: any) {
       console.error("Register Error:", error);
       
       let friendlyMessage = "No se pudo completar el registro.";
       
-      if (error.code?.includes('api-key-not-valid')) {
+      if (error.code?.includes('api-key-not-valid') || error.message?.includes('api-key-not-valid')) {
         friendlyMessage = "Llave API inválida. Ve a Netlify y realiza un 'Deploy project without cache' para que el sistema reconozca tus llaves.";
       } else if (error.code === 'auth/email-already-in-use') {
-        friendlyMessage = "Este correo ya está en uso.";
+        friendlyMessage = "Este correo ya está registrado en el portal.";
       } else if (error.code === 'auth/network-request-failed') {
-        friendlyMessage = "Error de red. Asegúrate de que las llaves en Netlify no tengan espacios.";
+        friendlyMessage = "Error de red. Verifica tu conexión o que las llaves en Netlify no tengan espacios.";
+      } else if (error.code === 'auth/operation-not-allowed') {
+        friendlyMessage = "El método de correo/contraseña no está habilitado en tu consola de Firebase.";
       } else {
         friendlyMessage = `Error: ${error.message}`;
       }
