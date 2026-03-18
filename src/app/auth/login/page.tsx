@@ -76,7 +76,7 @@ export default function Login() {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow flex items-center justify-center py-20 bg-accent/10 px-4">
-        <Card className="w-full max-md shadow-2xl rounded-3xl border-none overflow-hidden">
+        <Card className="w-full max-w-md shadow-2xl rounded-3xl border-none overflow-hidden">
           <CardHeader className="space-y-2 text-center pb-8 pt-10">
             <div className="mx-auto bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
               <LogIn className="h-8 w-8 text-primary" />
@@ -115,7 +115,7 @@ export default function Login() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" title="password" className="text-sm font-bold">Contraseña</Label>
+                <Label htmlFor="password" className="text-sm font-bold">Contraseña</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <input
