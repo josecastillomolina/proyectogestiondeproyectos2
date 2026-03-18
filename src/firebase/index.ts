@@ -1,4 +1,3 @@
-
 'use client';
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
@@ -7,15 +6,16 @@ import { getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from './config';
 
 /**
- * Inicializa Firebase de forma limpia y directa.
+ * Inicialización limpia de Firebase.
+ * Se han eliminado las validaciones estrictas para permitir que el SDK maneje los errores.
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
-  // Log de diagnóstico simple
-  console.log('[Firebase Init] API Key detectada:', !!firebaseConfig.apiKey);
+  // Log de diagnóstico simple para confirmar carga en el navegador
+  console.log('[Firebase Init] Cargando configuración oficial...');
 
   const firebaseApp = getApps().length === 0 
     ? initializeApp(firebaseConfig) 
