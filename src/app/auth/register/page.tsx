@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -10,14 +11,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Mail, Lock, Phone, ArrowLeft, Loader2, CreditCard } from 'lucide-react';
+import { User, Mail, Lock, Phone, ArrowLeft, Loader2, CreditCard, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, serverTimestamp, getDoc, setDoc } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function Register() {
   const router = useRouter();
@@ -26,6 +25,7 @@ export default function Register() {
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -49,11 +49,13 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLoading) return;
+    setErrorMessage(null);
 
     if (!auth || !db) {
+      setErrorMessage("El sistema no está configurado. Verifica las llaves de Firebase en Netlify.");
       toast({
         title: "Error de Configuración",
-        description: "Firebase no está listo. Verifica las variables NEXT_PUBLIC_ en Netlify.",
+        description: "Faltan las variables de entorno NEXT_PUBLIC_.",
         variant: "destructive"
       });
       return;
@@ -62,33 +64,31 @@ export default function Register() {
     setIsLoading(true);
 
     try {
+      // 1. Verificación de Identificación (Cédula) Unica
       const idRef = doc(db, 'identifications', formData.idNumber);
-      
       try {
         const idSnap = await getDoc(idRef);
         if (idSnap.exists()) {
-          toast({ title: "Identificación Duplicada", description: "Esta cédula ya está registrada en el sistema nacional.", variant: "destructive" });
+          setErrorMessage("Esta identificación ya está registrada en el sistema nacional.");
           setIsLoading(false);
           return;
         }
-      } catch (err: any) {
-        if (err.code === 'permission-denied') {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'get', path: idRef.path }));
-          setIsLoading(false);
-          return;
+      } catch (firestoreErr: any) {
+        // Manejar error de cliente offline o falta de permisos
+        if (firestoreErr.message?.includes('offline') || firestoreErr.code === 'unavailable') {
+          throw new Error("offline-connection");
         }
-        // No relanzar si es error de red, manejarlo en el catch principal
-        if (err.code === 'unavailable' || err.message?.includes('offline')) {
-          throw err;
-        }
+        console.error("Firestore Uniqueness Check Error:", firestoreErr);
       }
 
+      // 2. Crear usuario en Auth
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const firebaseUser = userCredential.user;
 
       const [firstName, ...lastNameParts] = formData.fullName.split(' ');
       const lastName = lastNameParts.join(' ');
 
+      // 3. Guardar en base de datos
       await setDoc(idRef, { userId: firebaseUser.uid });
 
       setDocumentNonBlocking(doc(db, 'users', firebaseUser.uid), {
@@ -109,24 +109,22 @@ export default function Register() {
     } catch (error: any) {
       console.error('[Registration Error Log]', error);
       
-      let userMessage = "Ocurrió un error inesperado al crear el expediente.";
+      let friendlyMessage = "Ocurrió un error inesperado al crear el expediente.";
       
-      // Mapeo de errores específicos solicitado
-      if (error.code === 'auth/network-request-failed' || error.code === 'unavailable') {
-        userMessage = "Error de conexión. Verifica tu internet o la configuración del servidor.";
-      } else if (error.code === 'auth/configuration-not-found') {
-        userMessage = "Firebase no configurado correctamente. Contacta a soporte técnico.";
-      } else if (error.code === 'auth/invalid-api-key') {
-        userMessage = "Llave de acceso inválida. Verifica la configuración en Netlify.";
+      if (error.message === "offline-connection" || error.code === 'auth/network-request-failed') {
+        friendlyMessage = "Error de comunicación con el servidor nacional. Verifica tu conexión o las llaves de acceso.";
+      } else if (error.code === 'auth/configuration-not-found' || error.code === 'auth/invalid-api-key') {
+        friendlyMessage = "Configuración de Firebase inválida. Revisa el panel de Netlify.";
       } else if (error.code === 'auth/email-already-in-use') {
-        userMessage = "Este correo electrónico ya está registrado.";
+        friendlyMessage = "Este correo electrónico ya está registrado.";
       } else if (error.code === 'auth/weak-password') {
-        userMessage = "La contraseña es muy débil. Debe tener al menos 6 caracteres.";
+        friendlyMessage = "La contraseña debe tener al menos 6 caracteres.";
       }
 
+      setErrorMessage(friendlyMessage);
       toast({ 
         title: "Fallo en el Registro", 
-        description: userMessage, 
+        description: friendlyMessage, 
         variant: "destructive" 
       });
     } finally {
@@ -145,6 +143,13 @@ export default function Register() {
           </div>
           <CardContent className="p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
+              {errorMessage && (
+                <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-center gap-3 text-destructive text-sm animate-in fade-in duration-300">
+                  <AlertCircle className="h-5 w-5 shrink-0" />
+                  <p className="font-medium">{errorMessage}</p>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Nombre Completo</Label>

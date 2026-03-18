@@ -1,3 +1,4 @@
+
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
@@ -7,13 +8,15 @@ import { getFirestore } from 'firebase/firestore';
 
 /**
  * Inicializa los SDKs de Firebase de forma segura para el cliente.
+ * Incluye diagnósticos para variables de entorno en Netlify.
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
-  // 1. Diagnóstico de Seguridad (True/False)
+  // Diagnóstico de Seguridad: Imprime true/false para cada variable requerida.
+  // Esto ayuda a confirmar si Netlify está exponiendo las llaves al cliente.
   console.log('[Firebase Config Check]', {
     apiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: !!process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -22,27 +25,21 @@ export function initializeFirebase() {
     messagingSenderId: !!process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   });
 
-  // 2. Validación Individual con Errores Descriptivos
-  if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) console.error('Falta: NEXT_PUBLIC_FIREBASE_API_KEY');
-  if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) console.error('Falta: NEXT_PUBLIC_FIREBASE_PROJECT_ID');
-  if (!process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN) console.error('Falta: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN');
-
-  const isValidConfig = firebaseConfig.apiKey && 
-                        firebaseConfig.apiKey !== "undefined" && 
-                        firebaseConfig.apiKey !== "";
+  const isValidConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
+                        process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "undefined" && 
+                        process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "";
 
   if (!isValidConfig) {
-    console.warn('Firebase: La configuración no está lista. Revisa las variables de entorno NEXT_PUBLIC_ en Netlify.');
+    console.warn('Firebase: La configuración no está lista. Revisa las variables NEXT_PUBLIC_ en el panel de Netlify y haz un re-deploy.');
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
   try {
     let firebaseApp: FirebaseApp;
 
-    // Singleton: Evitar múltiples inicializaciones
     if (!getApps().length) {
       firebaseApp = initializeApp(firebaseConfig);
-      console.log('Firebase: Inicializado correctamente.');
+      console.log('Firebase: Inicializado correctamente en el cliente.');
     } else {
       firebaseApp = getApp();
     }
@@ -53,7 +50,7 @@ export function initializeFirebase() {
       firestore: getFirestore(firebaseApp)
     };
   } catch (error) {
-    console.error('Error crítico en inicialización de Firebase:', error);
+    console.error('Error crítico en la inicialización de Firebase:', error);
     return { firebaseApp: null, auth: null, firestore: null };
   }
 }
