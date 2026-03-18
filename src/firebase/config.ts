@@ -1,6 +1,6 @@
+
 /**
- * Configuración oficial de Firebase.
- * Los valores se cargan desde el archivo .env.
+ * Configuración oficial de Firebase para el Portal Nacional.
  */
 export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
