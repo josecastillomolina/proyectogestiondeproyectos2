@@ -15,8 +15,13 @@ export function initializeFirebase() {
   }
 
   // Validar configuración mínima para evitar errores de SDK
-  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "undefined") {
-    console.warn('Firebase: NEXT_PUBLIC_FIREBASE_API_KEY no detectada. Los servicios estarán deshabilitados.');
+  // Nota: Verificamos tanto null como el string "undefined" que a veces inyectan los bundlers
+  const isConfigIncomplete = !firebaseConfig.apiKey || 
+                             firebaseConfig.apiKey === "undefined" || 
+                             firebaseConfig.apiKey === "";
+
+  if (isConfigIncomplete) {
+    console.warn('Firebase: Configuración incompleta. Verifica las variables de entorno NEXT_PUBLIC_ en Netlify.');
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
