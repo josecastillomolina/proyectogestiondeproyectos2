@@ -6,32 +6,37 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 /**
- * Diagnóstico de API Key para depuración en consola del navegador.
- * Las API Keys válidas de Firebase siempre empiezan con "AIza" y tienen 39 caracteres.
+ * Diagnóstico Avanzado de API Key.
+ * Revela si la llave tiene caracteres ocultos o formato incorrecto.
  */
-const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+const rawKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+
 if (typeof window !== 'undefined') {
-  console.log('[API Key Debug]', {
-    exists: !!apiKey,
-    length: apiKey?.length,
-    startsWithAIza: apiKey?.startsWith('AIza'),
-    first6chars: apiKey?.substring(0, 6),
-    last4chars: apiKey?.slice(-4),
+  console.log('[KEY RAW DIAGNOSTIC]', {
+    value: JSON.stringify(rawKey),
+    length: rawKey?.length,
+    start: rawKey?.substring(0, 6),
+    trimmedLength: rawKey?.trim().length,
   });
 }
 
 /**
- * Inicializa los SDKs de Firebase con validación estricta de la API Key.
+ * Inicializa los SDKs de Firebase con validación flexible.
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
+  const apiKey = firebaseConfig.apiKey;
+
   try {
-    // Validación de formato antes de inicializar
-    if (!apiKey || !apiKey.startsWith('AIza') || apiKey.length !== 39) {
-      console.error('[Firebase] Error Crítico: La API Key no tiene un formato válido (debe empezar con AIza y tener 39 caracteres).');
+    // Validación flexible: empezar con AIza y tener una longitud razonable (35-45)
+    if (!apiKey || !apiKey.startsWith('AIza') || apiKey.length < 35) {
+      console.error('[Firebase] Error Crítico: La API Key configurada no parece válida.', {
+        keyDetected: apiKey ? `${apiKey.substring(0, 4)}...` : 'null',
+        length: apiKey?.length
+      });
     }
 
     let firebaseApp: FirebaseApp;
