@@ -10,15 +10,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { User, Mail, Lock, Phone, CreditCard, Flag, ArrowLeft, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Lock, Phone, CreditCard, Flag, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db } from '@/firebase/config';
+import { useAuth, useFirestore } from '@/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function Register() {
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
+  const db = useFirestore();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
@@ -45,31 +47,37 @@ export default function Register() {
       return;
     }
 
+    if (!auth || auth.config.apiKey === 'none') {
+      setErrorMessage("El servicio de salud digital no está configurado correctamente. Verifica tus variables de entorno.");
+      return;
+    }
+
     setIsLoading(true);
     try {
       // 1. Crear Usuario en Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
-      // 2. Actualizar Perfil de Auth
+      // 2. Actualizar Perfil de Auth para que el nombre sea visible de inmediato
       await updateProfile(userCredential.user, { 
         displayName: formData.fullName 
       });
 
       // 3. Guardar en Firestore (Opcional/Resiliente)
       try {
-        await setDoc(doc(db, 'users', userCredential.user.uid), {
-          fullName: formData.fullName,
-          username: formData.username,
-          identificationType: formData.idType,
-          idNumber: formData.idNumber,
-          email: email,
-          phoneNumber: formData.phone,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
+        if (db) {
+          await setDoc(doc(db, 'users', userCredential.user.uid), {
+            fullName: formData.fullName,
+            username: formData.username,
+            identificationType: formData.idType,
+            idNumber: formData.idNumber,
+            email: email,
+            phoneNumber: formData.phone,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          });
+        }
       } catch (fsError: any) {
         console.warn("[Firestore] No se pudieron guardar datos extra:", fsError.message);
-        // No bloqueamos el éxito si Firestore falla (ej. base de datos no creada)
       }
 
       toast({ 
@@ -82,7 +90,7 @@ export default function Register() {
       let msg = "No se pudo completar el registro oficial.";
       if (error.code === 'auth/email-already-in-use') msg = "Este correo ya está registrado.";
       if (error.code === 'auth/weak-password') msg = "La contraseña debe tener al menos 6 caracteres.";
-      if (error.code === 'auth/api-key-not-valid') msg = "Error de configuración: API Key inválida.";
+      if (error.code === 'auth/api-key-not-valid') msg = "Error crítico: API Key inválida o no configurada.";
       setErrorMessage(msg);
     } finally {
       setIsLoading(false);
@@ -109,7 +117,6 @@ export default function Register() {
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Nombre Completo */}
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-foreground">Nombre Completo</Label>
                     <div className="relative">
@@ -124,7 +131,6 @@ export default function Register() {
                     </div>
                   </div>
 
-                  {/* Nombre de Usuario */}
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-foreground">Nombre de Usuario</Label>
                     <div className="relative">
@@ -138,7 +144,6 @@ export default function Register() {
                     </div>
                   </div>
 
-                  {/* Tipo de ID */}
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-foreground">Tipo de Identificación</Label>
                     <div className="relative">
@@ -155,7 +160,6 @@ export default function Register() {
                     </div>
                   </div>
 
-                  {/* Número de ID */}
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-foreground">Número de Identificación</Label>
                     <div className="relative">
@@ -168,10 +172,8 @@ export default function Register() {
                         className="rounded-2xl h-14 pl-12 bg-muted/30 border-none focus-visible:ring-2 focus-visible:ring-primary"
                       />
                     </div>
-                    <p className="text-[11px] italic text-muted-foreground px-1">Este número será validado como único en el sistema nacional.</p>
                   </div>
 
-                  {/* Correo */}
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-foreground">Correo Electrónico</Label>
                     <div className="relative">
@@ -187,7 +189,6 @@ export default function Register() {
                     </div>
                   </div>
 
-                  {/* Teléfono */}
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-foreground">Teléfono de Contacto</Label>
                     <div className="relative">
@@ -202,7 +203,6 @@ export default function Register() {
                   </div>
                 </div>
 
-                {/* Contraseña */}
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-foreground">Contraseña</Label>
                   <div className="relative">

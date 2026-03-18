@@ -41,8 +41,8 @@ export default function Login() {
       return;
     }
 
-    if (!auth) {
-      setErrorMessage("Servicio no disponible. Verifica la configuración.");
+    if (!auth || auth.config.apiKey === 'none') {
+      setErrorMessage("El servicio no está disponible en este momento. Verifica la configuración.");
       return;
     }
 
@@ -55,8 +55,7 @@ export default function Login() {
       console.error("Error de login:", error);
       let msg = "Credenciales incorrectas.";
       if (error.code === 'auth/invalid-credential') msg = "El correo o la contraseña son incorrectos.";
-      if (error.code === 'auth/user-not-found') msg = "No existe una cuenta con este correo.";
-      if (error.code === 'auth/api-key-not-valid') msg = "Error del sistema: API Key inválida.";
+      if (error.code === 'auth/api-key-not-valid') msg = "Error de configuración: API Key inválida.";
       setErrorMessage(msg);
     } finally {
       setIsLoading(false);

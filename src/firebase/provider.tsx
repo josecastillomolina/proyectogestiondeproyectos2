@@ -59,8 +59,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   });
 
   useEffect(() => {
-    // Si no hay auth (Firebase falló), marcamos como "no cargando" de inmediato para no bloquear UI.
-    if (!auth) { 
+    // Si no hay auth real (apiKey == "none"), marcamos como listo de inmediato
+    if (!auth || auth.config.apiKey === 'none') { 
       setUserAuthState({ user: null, isUserLoading: false, userError: null });
       return;
     }
@@ -79,7 +79,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   }, [auth]); 
 
   const contextValue = useMemo((): FirebaseContextState => {
-    const servicesAvailable = !!(firebaseApp && firestore && auth);
+    // Solo consideramos servicios disponibles si tienen un API Key real
+    const servicesAvailable = !!(firebaseApp && firestore && auth && auth.config.apiKey !== 'none');
     return {
       areServicesAvailable: servicesAvailable,
       firebaseApp,
@@ -103,7 +104,7 @@ export const useFirebase = (): FirebaseServicesAndUser | null => {
   const context = useContext(FirebaseContext);
   if (context === undefined) return null;
   
-  if (!context.firebaseApp || !context.firestore || !context.auth) {
+  if (!context.firebaseApp || !context.firestore || !context.auth || context.auth.config.apiKey === 'none') {
     return null;
   }
 
@@ -118,18 +119,18 @@ export const useFirebase = (): FirebaseServicesAndUser | null => {
 };
 
 export const useAuth = (): Auth | null => {
-  const services = useFirebase();
-  return services?.auth || null;
+  const context = useContext(FirebaseContext);
+  return context?.auth || null;
 };
 
 export const useFirestore = (): Firestore | null => {
-  const services = useFirebase();
-  return services?.firestore || null;
+  const context = useContext(FirebaseContext);
+  return context?.firestore || null;
 };
 
 export const useFirebaseApp = (): FirebaseApp | null => {
-  const services = useFirebase();
-  return services?.firebaseApp || null;
+  const context = useContext(FirebaseContext);
+  return context?.firebaseApp || null;
 };
 
 export function useMemoFirebase<T>(factory: () => T, deps: React.DependencyList): T {

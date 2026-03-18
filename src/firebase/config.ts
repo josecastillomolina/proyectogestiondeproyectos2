@@ -15,15 +15,16 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
-// Inicialización ultra-segura
-const isConfigValid = !!firebaseConfig.apiKey && firebaseConfig.apiKey !== 'undefined';
+// Verificamos si la configuración es mínima para intentar inicializar
+const hasConfig = !!firebaseConfig.apiKey && firebaseConfig.apiKey !== 'undefined';
 
 if (!getApps().length) {
-  if (isConfigValid) {
+  if (hasConfig) {
     app = initializeApp(firebaseConfig);
   } else {
-    // Fallback para evitar el error de API Key inválida durante el despliegue inicial
-    app = initializeApp({ apiKey: "temporary-key", projectId: "temporary-id" });
+    // Si no hay configuración, inicializamos un app vacío para evitar crashes inmediatos
+    // pero marcamos que no es un app funcional para Auth/Firestore real
+    app = initializeApp({ apiKey: "none", projectId: "none" });
   }
 } else {
   app = getApp();
