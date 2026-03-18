@@ -52,8 +52,8 @@ export default function Register() {
 
     if (!auth || !db) {
       toast({
-        title: "Sincronizando...",
-        description: "El sistema está conectando con los servicios nacionales. Si persiste, verifica las llaves en Netlify.",
+        title: "Error de Configuración",
+        description: "Firebase no está listo. Verifica las variables NEXT_PUBLIC_ en Netlify.",
         variant: "destructive"
       });
       return;
@@ -77,18 +77,10 @@ export default function Register() {
           setIsLoading(false);
           return;
         }
-        
-        // Manejo específico del error "offline" que suele ser por falta de config
+        // No relanzar si es error de red, manejarlo en el catch principal
         if (err.code === 'unavailable' || err.message?.includes('offline')) {
-          toast({
-            title: "Error de Conexión",
-            description: "No se pudo establecer comunicación con el servidor. Realiza un 'Trigger Deploy' en Netlify si acabas de agregar las llaves.",
-            variant: "destructive"
-          });
-          setIsLoading(false);
-          return;
+          throw err;
         }
-        throw err;
       }
 
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
@@ -97,10 +89,8 @@ export default function Register() {
       const [firstName, ...lastNameParts] = formData.fullName.split(' ');
       const lastName = lastNameParts.join(' ');
 
-      // Guardar mapeo de identificación
       await setDoc(idRef, { userId: firebaseUser.uid });
 
-      // Guardar perfil de usuario
       setDocumentNonBlocking(doc(db, 'users', firebaseUser.uid), {
         id: firebaseUser.uid,
         username: formData.username,
@@ -117,9 +107,26 @@ export default function Register() {
       toast({ title: "Expediente Creado", description: "Bienvenido al sistema unificado de salud." });
       router.push('/profile');
     } catch (error: any) {
+      console.error('[Registration Error Log]', error);
+      
+      let userMessage = "Ocurrió un error inesperado al crear el expediente.";
+      
+      // Mapeo de errores específicos solicitado
+      if (error.code === 'auth/network-request-failed' || error.code === 'unavailable') {
+        userMessage = "Error de conexión. Verifica tu internet o la configuración del servidor.";
+      } else if (error.code === 'auth/configuration-not-found') {
+        userMessage = "Firebase no configurado correctamente. Contacta a soporte técnico.";
+      } else if (error.code === 'auth/invalid-api-key') {
+        userMessage = "Llave de acceso inválida. Verifica la configuración en Netlify.";
+      } else if (error.code === 'auth/email-already-in-use') {
+        userMessage = "Este correo electrónico ya está registrado.";
+      } else if (error.code === 'auth/weak-password') {
+        userMessage = "La contraseña es muy débil. Debe tener al menos 6 caracteres.";
+      }
+
       toast({ 
         title: "Fallo en el Registro", 
-        description: error.message || "Error al crear el expediente.", 
+        description: userMessage, 
         variant: "destructive" 
       });
     } finally {

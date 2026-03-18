@@ -13,7 +13,20 @@ export function initializeFirebase() {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
-  // Validación robusta de la configuración
+  // 1. Diagnóstico de Seguridad (True/False)
+  console.log('[Firebase Config Check]', {
+    apiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: !!process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    appId: !!process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    messagingSenderId: !!process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  });
+
+  // 2. Validación Individual con Errores Descriptivos
+  if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) console.error('Falta: NEXT_PUBLIC_FIREBASE_API_KEY');
+  if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) console.error('Falta: NEXT_PUBLIC_FIREBASE_PROJECT_ID');
+  if (!process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN) console.error('Falta: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN');
+
   const isValidConfig = firebaseConfig.apiKey && 
                         firebaseConfig.apiKey !== "undefined" && 
                         firebaseConfig.apiKey !== "";
@@ -26,6 +39,7 @@ export function initializeFirebase() {
   try {
     let firebaseApp: FirebaseApp;
 
+    // Singleton: Evitar múltiples inicializaciones
     if (!getApps().length) {
       firebaseApp = initializeApp(firebaseConfig);
       console.log('Firebase: Inicializado correctamente.');
