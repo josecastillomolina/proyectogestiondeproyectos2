@@ -1,13 +1,14 @@
+
 /**
  * Configuración de Firebase con limpieza profunda.
- * Next.js hornea las variables NEXT_PUBLIC_ durante el build.
+ * Asegura que no se cuelen comillas o espacios de los archivos .env o Netlify.
  */
 const getCleanEnv = (key: string | undefined) => {
   if (!key || key === 'undefined' || key === 'null' || key.trim() === '') {
     return '';
   }
-  // Elimina espacios, comillas simples/dobles y caracteres de control
-  return key.trim().replace(/['"\s]/g, '');
+  // Elimina espacios, comillas simples/dobles y caracteres de escape comunes
+  return key.trim().replace(/['"\s\\]/g, '');
 };
 
 export const firebaseConfig = {

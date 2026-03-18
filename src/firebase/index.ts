@@ -1,3 +1,4 @@
+
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
@@ -6,22 +7,25 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 /**
- * Diagnóstico de configuración en tiempo de ejecución.
+ * Diagnóstico extendido de configuración.
+ * Esto ayuda a identificar si las variables de entorno están llegando al cliente.
  */
 if (typeof window !== 'undefined') {
-  const envKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-  const isEnvPresent = !!envKey && envKey !== 'undefined';
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  const isPresent = !!apiKey && apiKey !== 'undefined' && apiKey.length > 0;
   
-  console.log('[Firebase Runtime Check]', {
-    variableDetectadaEnBundle: isEnvPresent,
-    longitudDetectada: envKey?.length || 0,
-    llaveLimpia: !!firebaseConfig.apiKey,
-    modo: process.env.NODE_ENV
+  console.log('%c[Firebase Config Debug]', 'color: #f39c12; font-weight: bold;', {
+    variablePresente: isPresent,
+    longitud: apiKey?.length || 0,
+    empiezaConAIza: apiKey?.startsWith('AIza') || false,
+    mensaje: isPresent 
+      ? 'La llave parece estar cargada correctamente.' 
+      : 'ADVERTENCIA: La variable NEXT_PUBLIC_FIREBASE_API_KEY está VACÍA en el bundle del navegador.'
   });
 }
 
 /**
- * Inicializa los SDKs de Firebase.
+ * Inicializa los SDKs de Firebase de forma segura.
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
@@ -30,13 +34,17 @@ export function initializeFirebase() {
 
   const { apiKey } = firebaseConfig;
 
-  // Validación: Next.js requiere que la llave esté presente durante el BUILD
+  // Validación crítica: Si no hay API Key, informamos al usuario qué hacer en Netlify
   if (!apiKey || !apiKey.startsWith('AIza') || apiKey.length < 35) {
-    console.error('[Firebase] ERROR DE CONFIGURACIÓN:', {
-      causa: !apiKey ? 'Variable NEXT_PUBLIC_FIREBASE_API_KEY no detectada' : 'Formato de llave inválido',
-      estado: apiKey ? `Inicia con ${apiKey.substring(0, 4)}... (Largo: ${apiKey.length})` : 'VACÍO',
-      accionRequerida: 'Si estás en Netlify, debes hacer "Trigger deploy" -> "Clear cache and deploy site" para que el bundle incluya las nuevas llaves.'
+    console.error('%c[Firebase] ERROR DE CONFIGURACIÓN CRÍTICO', 'color: #e74c3c; font-size: 16px; font-weight: bold;');
+    console.table({
+      'Problema Detectado': !apiKey ? 'Variable no encontrada' : 'Formato de llave inválido',
+      'Valor Actual': apiKey ? `Inicia con ${apiKey.substring(0, 4)}...` : 'VACÍO',
+      'Acción Requerida': 'En Netlify: Trigger deploy -> Deploy project without cache'
     });
+    
+    // Devolvemos nulos para evitar que initializeApp lance una excepción fatal
+    return { firebaseApp: null, auth: null, firestore: null };
   }
 
   try {
@@ -54,7 +62,7 @@ export function initializeFirebase() {
       firestore: getFirestore(firebaseApp)
     };
   } catch (error) {
-    console.error('[Firebase] Error al inicializar:', error);
+    console.error('[Firebase] Fallo al inicializar SDKs:', error);
     return { firebaseApp: null, auth: null, firestore: null };
   }
 }
