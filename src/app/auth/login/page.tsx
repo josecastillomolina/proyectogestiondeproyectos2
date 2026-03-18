@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -8,7 +9,7 @@ import { Footer } from '@/components/footer';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { LogIn, Lock, ArrowLeft, Loader2, Mail } from 'lucide-react';
+import { LogIn, Lock, ArrowLeft, Loader2, Mail, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -19,6 +20,7 @@ export default function Login() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -33,12 +35,15 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLoading) return;
+    setErrorMessage(null);
 
     // Validación de disponibilidad del servicio
     if (!auth) {
+      const msg = "Sincronización pendiente: Las llaves no se detectan en el navegador. Ve a Netlify > Deploys > Trigger Deploy > 'Clear cache and deploy site'.";
+      setErrorMessage(msg);
       toast({
-        title: "Servicio no configurado",
-        description: "El portal no detecta las llaves de Firebase en Netlify. Por favor, revisa las variables de entorno NEXT_PUBLIC_.",
+        title: "Configuración no detectada",
+        description: "Se requiere un despliegue limpio en Netlify para activar las llaves de acceso.",
         variant: "destructive"
       });
       return;
@@ -54,14 +59,16 @@ export default function Login() {
       });
       router.push('/profile');
     } catch (error: any) {
-      let errorMessage = "Credenciales incorrectas. Inténtalo de nuevo.";
-      if (error.code === 'auth/invalid-credential') errorMessage = "El correo o la contraseña son incorrectos.";
-      else if (error.code === 'auth/too-many-requests') errorMessage = "Demasiados intentos. Espera unos minutos.";
-      else if (error.code === 'auth/invalid-api-key') errorMessage = "Error de configuración: API Key inválida.";
+      let friendlyError = "Credenciales incorrectas o problema de conexión.";
       
+      if (error.code === 'auth/invalid-credential') friendlyError = "El correo o la contraseña son incorrectos.";
+      else if (error.code === 'auth/too-many-requests') friendlyError = "Demasiados intentos. Espera unos minutos.";
+      else if (error.code === 'auth/network-request-failed') friendlyError = "Error de red. Verifica que las llaves en Netlify no tengan espacios extras.";
+      
+      setErrorMessage(friendlyError);
       toast({
         title: "Error de Acceso",
-        description: errorMessage,
+        description: friendlyError,
         variant: "destructive"
       });
     } finally {
@@ -85,6 +92,16 @@ export default function Login() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {errorMessage && (
+                <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-start gap-3 text-destructive text-sm animate-in fade-in duration-300">
+                  <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-bold">Aviso del Sistema</p>
+                    <p className="leading-relaxed">{errorMessage}</p>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="email">Correo Electrónico</Label>
                 <div className="relative">

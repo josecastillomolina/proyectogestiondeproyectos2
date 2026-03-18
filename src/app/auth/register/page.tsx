@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -10,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Mail, Lock, Phone, ArrowLeft, Loader2, CreditCard, AlertCircle, Info } from 'lucide-react';
+import { User, Mail, Lock, Phone, ArrowLeft, Loader2, CreditCard, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -51,11 +52,11 @@ export default function Register() {
     setErrorMessage(null);
 
     if (!auth || !db) {
-      const msg = "Falta el paso final: Ve a Netlify > Deploys > Trigger Deploy > 'Clear cache and deploy site'. Sin esto, el sistema no detectará tus variables.";
+      const msg = "Sincronización pendiente: Las llaves no se detectan. Ve a Netlify > Deploys > el botón gris 'Trigger Deploy' > 'Clear cache and deploy site'.";
       setErrorMessage(msg);
       toast({
-        title: "Sincronización Pendiente",
-        description: "Se requiere un re-despliegue limpio en Netlify para activar las llaves.",
+        title: "Paso final requerido",
+        description: "Haz clic en 'Clear cache and deploy site' en Netlify para activar el sistema.",
         variant: "destructive"
       });
       return;
@@ -100,9 +101,9 @@ export default function Register() {
       let friendlyMessage = "Error de comunicación con el sistema de salud.";
       
       if (error.code === 'auth/email-already-in-use') friendlyMessage = "Este correo ya está registrado.";
-      else if (error.code === 'auth/weak-password') friendlyMessage = "La contraseña es muy débil.";
+      else if (error.code === 'auth/weak-password') friendlyMessage = "La contraseña es muy débil (mínimo 6 caracteres).";
       else if (error.code === 'auth/network-request-failed' || error.message?.includes('offline')) {
-        friendlyMessage = "El cliente está 'offline'. Por favor, limpia la caché de Netlify y vuelve a desplegar el sitio.";
+        friendlyMessage = "El cliente no detecta conexión. Por favor, haz el 'Clear cache and deploy site' en Netlify.";
       }
 
       setErrorMessage(friendlyMessage);
@@ -127,11 +128,11 @@ export default function Register() {
                 <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-start gap-3 text-destructive text-sm animate-in fade-in duration-300">
                   <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <p className="font-bold">Error de Configuración</p>
+                    <p className="font-bold">Aviso de Configuración</p>
                     <p className="leading-relaxed">{errorMessage}</p>
-                    <div className="pt-2">
-                       <p className="text-[10px] uppercase font-bold opacity-70">Instrucciones Netlify:</p>
-                       <p className="text-xs">Deploys > Trigger Deploy > Clear cache and deploy site.</p>
+                    <div className="pt-2 border-t border-destructive/20 mt-2">
+                       <p className="text-[10px] uppercase font-bold opacity-70">En tu captura de pantalla:</p>
+                       <p className="text-xs">Haz clic en el botón gris <strong>'Trigger deploy'</strong> arriba a la derecha y selecciona <strong>'Clear cache and deploy site'</strong>.</p>
                     </div>
                   </div>
                 </div>
