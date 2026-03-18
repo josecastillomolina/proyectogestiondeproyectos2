@@ -38,11 +38,11 @@ export default function Login() {
 
     // Verificación de configuración
     if (!auth) {
-      const msg = "Sincronización de llaves pendiente en el navegador. Haz clic en 'Trigger deploy' -> 'Deploy project without cache' en tu panel de Netlify.";
+      const msg = "Error: El sistema no detecta las llaves de acceso. Por favor, haz clic en 'Trigger deploy' -> 'Deploy project without cache' en tu panel de Netlify.";
       setErrorMessage(msg);
       toast({
-        title: "Paso Final Requerido",
-        description: "Haz clic en 'Deploy project without cache' en Netlify para activar las llaves.",
+        title: "Falta Configuración",
+        description: "Las llaves de Firebase no están sincronizadas.",
         variant: "destructive"
       });
       return;
@@ -54,19 +54,23 @@ export default function Login() {
       await signInWithEmailAndPassword(auth, formData.email, formData.password);
       toast({
         title: "Acceso Exitoso",
-        description: "Bienvenido al portal AgendaCitas Nacional CR.",
+        description: "Bienvenido al portal nacional.",
       });
       router.push('/profile');
     } catch (error: any) {
-      let friendlyError = "Credenciales incorrectas o problema de comunicación.";
+      let friendlyError = "Error de acceso: Credenciales inválidas o problema de red.";
       
-      if (error.code === 'auth/invalid-credential') friendlyError = "El correo o la contraseña son incorrectos.";
-      else if (error.code === 'auth/too-many-requests') friendlyError = "Demasiados intentos. Espera unos minutos.";
-      else if (error.code === 'auth/network-request-failed') friendlyError = "Error de red. Asegúrate de haber hecho el 'Deploy project without cache' en Netlify.";
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        friendlyError = "El correo electrónico o la contraseña son incorrectos.";
+      } else if (error.code === 'auth/too-many-requests') {
+        friendlyError = "Demasiados intentos fallidos. Por favor, espera unos minutos.";
+      } else if (error.code === 'auth/network-request-failed') {
+        friendlyError = "Error de red: No se pudo contactar al servidor de salud.";
+      }
       
       setErrorMessage(friendlyError);
       toast({
-        title: "Error de Acceso",
+        title: "Error de Ingreso",
         description: friendlyError,
         variant: "destructive"
       });
@@ -79,40 +83,36 @@ export default function Login() {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow flex items-center justify-center py-20 bg-accent/10 px-4">
-        <Card className="w-full max-w-md shadow-2xl rounded-3xl border-none">
-          <CardHeader className="space-y-2 text-center pb-10">
+        <Card className="w-full max-w-md shadow-2xl rounded-3xl border-none overflow-hidden">
+          <CardHeader className="space-y-2 text-center pb-8 pt-10">
             <div className="mx-auto bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
               <LogIn className="h-8 w-8 text-primary" />
             </div>
-            <CardTitle className="text-3xl font-bold font-headline text-foreground">Acceso al Portal</CardTitle>
+            <CardTitle className="text-3xl font-bold font-headline text-foreground tracking-tight">Acceso al Portal</CardTitle>
             <CardDescription className="text-base text-muted-foreground">
               Ingresa para gestionar tus citas médicas nacionales.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <CardContent className="px-8 pb-8">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {errorMessage && (
-                <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-start gap-3 text-destructive text-sm animate-in fade-in duration-300">
+                <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-start gap-3 text-destructive text-sm animate-in fade-in slide-in-from-top-2 duration-300">
                   <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <p className="font-bold text-xs uppercase tracking-wider">Aviso de Configuración</p>
-                    <p className="leading-relaxed font-medium">{errorMessage}</p>
-                    <div className="mt-2 pt-2 border-t border-destructive/20">
-                      <p className="text-[10px] font-bold opacity-70">EN TU CAPTURA DE PANTALLA:</p>
-                      <p className="text-[11px]">Haz clic en <strong>Trigger deploy</strong> y selecciona <strong>Deploy project without cache</strong>.</p>
-                    </div>
+                    <p className="font-bold text-xs uppercase tracking-wider">Aviso del Sistema</p>
+                    <p className="leading-relaxed">{errorMessage}</p>
                   </div>
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Correo Electrónico</Label>
+                <Label htmlFor="email" className="text-sm font-bold">Correo Electrónico</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <input
                     id="email"
                     type="email"
-                    className="flex h-11 w-full rounded-xl border border-input bg-background pl-10 pr-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-11 w-full rounded-xl border border-input bg-background pl-10 pr-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                     placeholder="ejemplo@correo.com"
                     required
                     value={formData.email}
@@ -122,13 +122,13 @@ export default function Login() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
+                <Label htmlFor="password" title="password" className="text-sm font-bold">Contraseña</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <input
                     id="password"
                     type="password"
-                    className="flex h-11 w-full rounded-xl border border-input bg-background pl-10 pr-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-11 w-full rounded-xl border border-input bg-background pl-10 pr-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                     placeholder="••••••••"
                     required
                     value={formData.password}
@@ -140,7 +140,7 @@ export default function Login() {
               <div className="flex flex-col gap-3 pt-4">
                 <Button 
                   type="submit" 
-                  className="w-full h-12 text-lg rounded-full shadow-lg shadow-primary/20" 
+                  className="w-full h-12 text-lg rounded-full shadow-lg shadow-primary/20 transition-all active:scale-95" 
                   disabled={isLoading}
                 >
                   {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Ingresar al Sistema"}
@@ -151,7 +151,7 @@ export default function Login() {
               </div>
             </form>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4 border-t py-6 bg-muted/20 rounded-b-3xl">
+          <CardFooter className="flex flex-col gap-4 border-t py-6 bg-muted/20">
             <p className="text-sm text-muted-foreground text-center">
               ¿Aún no tienes expediente digital?{' '}
               <Link href="/auth/register" className="text-primary font-bold hover:underline">

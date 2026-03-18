@@ -15,8 +15,9 @@ export function initializeFirebase() {
   }
 
   // Diagnóstico para la consola del navegador
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
   const check = {
-    apiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    apiKey: !!apiKey && apiKey !== "undefined" && apiKey !== "",
     authDomain: !!process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
     projectId: !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
     appId: !!process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
@@ -24,12 +25,8 @@ export function initializeFirebase() {
 
   console.log('[Firebase App] Diagnóstico de variables:', check);
 
-  const isValidConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
-                        process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "undefined" && 
-                        process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "";
-
-  if (!isValidConfig) {
-    console.warn('[Firebase App] Sincronización pendiente. Haz clic en "Deploy project without cache" en Netlify.');
+  if (!check.apiKey) {
+    console.warn('[Firebase App] Sincronización pendiente. Se requiere "Deploy project without cache" en Netlify.');
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
@@ -49,7 +46,7 @@ export function initializeFirebase() {
       firestore: getFirestore(firebaseApp)
     };
   } catch (error) {
-    console.error('[Firebase App] Error crítico:', error);
+    console.error('[Firebase App] Error crítico de inicialización:', error);
     return { firebaseApp: null, auth: null, firestore: null };
   }
 }
