@@ -9,12 +9,12 @@ interface FirebaseClientProviderProps {
 }
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
+  // Memoización segura para no romper el render si Firebase tarda en responder
   const firebaseServices = useMemo(() => {
     try {
-      // Retornamos las instancias exportadas directamente para mayor estabilidad
       return { firebaseApp, auth, firestore: db };
     } catch (e) {
-      console.warn('[Firebase] Error de inicialización:', e);
+      console.warn('[Firebase] Fallo silencioso en inicialización:', e);
       return { firebaseApp: null, auth: null, firestore: null };
     }
   }, []);
