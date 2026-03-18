@@ -7,19 +7,21 @@ import { getFirestore } from 'firebase/firestore';
 
 /**
  * Inicializa los SDKs de Firebase de forma directa y silenciosa.
- * No realiza validaciones de formato que bloqueen el arranque.
+ * Incluye una tabla de diagnóstico para verificar las variables de entorno en el navegador.
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
-  // TAREA 1 — DIAGNÓSTICO INMEDIATO
+  // DIAGNÓSTICO: Revisa esto en la consola del navegador (F12)
+  console.log('%c[Firebase Diagnostic]', 'color: #3498db; font-weight: bold; font-size: 14px;');
   console.table({
-    apiKey_value: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? 'UNDEFINED',
-    apiKey_length: process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.length ?? 0,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? 'UNDEFINED',
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ?? 'UNDEFINED',
+    'API Key detectada': !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    'Largo de Key': process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.length || 0,
+    'Empieza con AIza': process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.startsWith('AIza') || false,
+    'Project ID': process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'MISSING',
+    'Auth Domain': process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'MISSING',
   });
 
   try {
@@ -33,7 +35,7 @@ export function initializeFirebase() {
       firestore: getFirestore(firebaseApp)
     };
   } catch (error) {
-    console.warn('[Firebase] No se pudo inicializar el servicio. Verifica tus variables en .env.local');
+    console.warn('[Firebase] Fallo al inicializar. Revisa la tabla de arriba.');
     return { firebaseApp: null, auth: null, firestore: null };
   }
 }
