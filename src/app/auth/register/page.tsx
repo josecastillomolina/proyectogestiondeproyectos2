@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -11,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Mail, Lock, Phone, ArrowLeft, Loader2, CreditCard, AlertCircle } from 'lucide-react';
+import { User, Mail, Lock, Phone, ArrowLeft, Loader2, CreditCard, AlertCircle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -52,10 +51,11 @@ export default function Register() {
     setErrorMessage(null);
 
     if (!auth || !db) {
-      setErrorMessage("El sistema no está configurado. Verifica las llaves de Firebase en Netlify.");
+      const msg = "Falta el paso final: Ve a Netlify > Deploys > Trigger Deploy > 'Clear cache and deploy site'. Sin esto, el sistema no detectará tus variables.";
+      setErrorMessage(msg);
       toast({
-        title: "Error de Configuración",
-        description: "Faltan las variables de entorno NEXT_PUBLIC_.",
+        title: "Sincronización Pendiente",
+        description: "Se requiere un re-despliegue limpio en Netlify para activar las llaves.",
         variant: "destructive"
       });
       return;
@@ -64,31 +64,21 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      // 1. Verificación de Identificación (Cédula) Unica
       const idRef = doc(db, 'identifications', formData.idNumber);
-      try {
-        const idSnap = await getDoc(idRef);
-        if (idSnap.exists()) {
-          setErrorMessage("Esta identificación ya está registrada en el sistema nacional.");
-          setIsLoading(false);
-          return;
-        }
-      } catch (firestoreErr: any) {
-        // Manejar error de cliente offline o falta de permisos
-        if (firestoreErr.message?.includes('offline') || firestoreErr.code === 'unavailable') {
-          throw new Error("offline-connection");
-        }
-        console.error("Firestore Uniqueness Check Error:", firestoreErr);
+      const idSnap = await getDoc(idRef).catch(() => null);
+      
+      if (idSnap && idSnap.exists()) {
+        setErrorMessage("Esta identificación ya está registrada en el sistema nacional.");
+        setIsLoading(false);
+        return;
       }
 
-      // 2. Crear usuario en Auth
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const firebaseUser = userCredential.user;
 
       const [firstName, ...lastNameParts] = formData.fullName.split(' ');
       const lastName = lastNameParts.join(' ');
 
-      // 3. Guardar en base de datos
       await setDoc(idRef, { userId: firebaseUser.uid });
 
       setDocumentNonBlocking(doc(db, 'users', firebaseUser.uid), {
@@ -107,26 +97,16 @@ export default function Register() {
       toast({ title: "Expediente Creado", description: "Bienvenido al sistema unificado de salud." });
       router.push('/profile');
     } catch (error: any) {
-      console.error('[Registration Error Log]', error);
+      let friendlyMessage = "Error de comunicación con el sistema de salud.";
       
-      let friendlyMessage = "Ocurrió un error inesperado al crear el expediente.";
-      
-      if (error.message === "offline-connection" || error.code === 'auth/network-request-failed') {
-        friendlyMessage = "Error de comunicación con el servidor nacional. Verifica tu conexión o las llaves de acceso.";
-      } else if (error.code === 'auth/configuration-not-found' || error.code === 'auth/invalid-api-key') {
-        friendlyMessage = "Configuración de Firebase inválida. Revisa el panel de Netlify.";
-      } else if (error.code === 'auth/email-already-in-use') {
-        friendlyMessage = "Este correo electrónico ya está registrado.";
-      } else if (error.code === 'auth/weak-password') {
-        friendlyMessage = "La contraseña debe tener al menos 6 caracteres.";
+      if (error.code === 'auth/email-already-in-use') friendlyMessage = "Este correo ya está registrado.";
+      else if (error.code === 'auth/weak-password') friendlyMessage = "La contraseña es muy débil.";
+      else if (error.code === 'auth/network-request-failed' || error.message?.includes('offline')) {
+        friendlyMessage = "El cliente está 'offline'. Por favor, limpia la caché de Netlify y vuelve a desplegar el sitio.";
       }
 
       setErrorMessage(friendlyMessage);
-      toast({ 
-        title: "Fallo en el Registro", 
-        description: friendlyMessage, 
-        variant: "destructive" 
-      });
+      toast({ title: "Fallo en el Registro", description: friendlyMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -144,9 +124,16 @@ export default function Register() {
           <CardContent className="p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               {errorMessage && (
-                <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-center gap-3 text-destructive text-sm animate-in fade-in duration-300">
-                  <AlertCircle className="h-5 w-5 shrink-0" />
-                  <p className="font-medium">{errorMessage}</p>
+                <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-start gap-3 text-destructive text-sm animate-in fade-in duration-300">
+                  <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-bold">Error de Configuración</p>
+                    <p className="leading-relaxed">{errorMessage}</p>
+                    <div className="pt-2">
+                       <p className="text-[10px] uppercase font-bold opacity-70">Instrucciones Netlify:</p>
+                       <p className="text-xs">Deploys > Trigger Deploy > Clear cache and deploy site.</p>
+                    </div>
+                  </div>
                 </div>
               )}
 

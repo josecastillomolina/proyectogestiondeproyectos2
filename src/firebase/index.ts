@@ -1,4 +1,3 @@
-
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
@@ -16,7 +15,7 @@ export function initializeFirebase() {
   }
 
   // Diagnóstico de Seguridad: Imprime true/false para cada variable requerida.
-  // Esto ayuda a confirmar si Netlify está exponiendo las llaves al cliente.
+  // Es CRUCIAL que el log use el string completo process.env.NEXT_PUBLIC_...
   console.log('[Firebase Config Check]', {
     apiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: !!process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -30,7 +29,7 @@ export function initializeFirebase() {
                         process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "";
 
   if (!isValidConfig) {
-    console.warn('Firebase: La configuración no está lista. Revisa las variables NEXT_PUBLIC_ en el panel de Netlify y haz un re-deploy.');
+    console.warn('Firebase: La configuración no está lista en el cliente. Si ya pusiste las variables en Netlify, debes hacer un "Clear cache and deploy site".');
     return { firebaseApp: null, auth: null, firestore: null };
   }
 
@@ -39,7 +38,7 @@ export function initializeFirebase() {
 
     if (!getApps().length) {
       firebaseApp = initializeApp(firebaseConfig);
-      console.log('Firebase: Inicializado correctamente en el cliente.');
+      console.log('Firebase: Inicializado correctamente.');
     } else {
       firebaseApp = getApp();
     }
