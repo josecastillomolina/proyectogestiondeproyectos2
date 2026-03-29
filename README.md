@@ -1,44 +1,44 @@
 
-# AgendaCitas Nacional CR - Guía de Despliegue
+# AgendaCitas Nacional CR - Guía de Gestión
 
-Este proyecto es un portal oficial para la gestión de citas médicas en Costa Rica.
+Este proyecto es el portal oficial para la gestión de citas médicas en Costa Rica.
 
-## 🛠️ 1. Configuración de Variables de Entorno (IMPORTANTE)
+## 🚀 1. Cómo actualizar los cambios en Netlify (IMPORTANTE)
 
-Para que el proyecto funcione en Netlify, debes configurar estas variables en **Site settings > Environment variables**:
+Si ya tienes el sitio conectado a GitHub, cada vez que hagas cambios en Firebase Studio y quieras verlos en vivo, ejecuta estos comandos en tu terminal:
 
-| Nombre de la Variable | Descripción |
-|----------|-------------|
-| `NEXT_PUBLIC_FIREBASE_API_KEY` | Tu Firebase API Key |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Tu Auth Domain |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | El ID de tu proyecto |
-| `NEXT_PUBLIC_FIREBASE_APP_ID` | El ID de la aplicación |
-| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Sender ID |
-
-## 🚀 2. Instrucciones para subir a GitHub (SOLUCIÓN AL BLOQUEO)
-
-Si el `git push` se quedaba pegado, era porque intentabas subir la carpeta `node_modules`. Con el nuevo `.gitignore` que he creado, ahora funcionará rápido:
-
-1. **Limpiar cache de Git**:
-   ```bash
-   git rm -r --cached .
-   ```
-
-2. **Añadir archivos (ahora respetará el .gitignore)**:
+1. **Guardar cambios**:
    ```bash
    git add .
    ```
 
-3. **Hacer commit**:
+2. **Crear etiqueta de avance**:
    ```bash
-   git commit -m "🚀 Fix: Add .gitignore and secure Firebase config"
+   git commit -m "✨ Actualización: Nuevas funciones de perfil y centros de salud"
    ```
 
-4. **Subir a GitHub**:
+3. **Subir y Desplegar**:
    ```bash
-   git push origin main --force
+   git push origin main
    ```
 
-## 🌐 3. Configuración en Netlify
+*Nota: Netlify detectará el push automáticamente y comenzará la construcción (Build). Tardará unos 2-3 minutos en reflejarse.*
+
+## 🛠️ 2. Configuración de Variables de Entorno
+
+Asegúrate de tener estas variables en **Site settings > Environment variables** de Netlify para que Firebase funcione:
+
+| Variable | Valor sugerido |
+|----------|-------------|
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Tu API Key |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | agendacitas-nacional |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | agendacitas-nacional.firebaseapp.com |
+
+## 📦 3. Solución a errores de subida
+Si el `git push` falla o se queda pegado:
+1. Revisa que no estés subiendo la carpeta `node_modules` (el archivo `.gitignore` ya se encarga de esto).
+2. Si es necesario, fuerza la subida: `git push origin main --force`.
+
+## 🌐 4. Configuración del Build
 - **Build Command**: `npm run build`
 - **Publish Directory**: `.next`
