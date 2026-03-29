@@ -1,20 +1,20 @@
 
-# AgendaCitas Nacional CR - Guía de Gestión
+# AgendaCitas Nacional CR - Guía de Gestión y Despliegue
 
-Este proyecto es el portal oficial para la gestión de citas médicas en Costa Rica.
+Este es el portal oficial para la gestión de citas médicas en Costa Rica.
 
-## 🚀 1. Cómo actualizar los cambios en Netlify (IMPORTANTE)
+## 🚀 1. Cómo actualizar los cambios en Netlify (DESDE ESTA CONSOLA)
 
-Si ya tienes el sitio conectado a GitHub, cada vez que hagas cambios en Firebase Studio y quieras verlos en vivo, ejecuta estos comandos en tu terminal:
+Cada vez que termines de hacer cambios aquí en Firebase Studio, sigue estos pasos en la **Terminal**:
 
-1. **Guardar cambios**:
+1. **Preparar cambios**:
    ```bash
    git add .
    ```
 
 2. **Crear etiqueta de avance**:
    ```bash
-   git commit -m "✨ Actualización: Nuevas funciones de perfil y centros de salud"
+   git commit -m "✨ Mejora: Sistema de citas y perfiles médicos"
    ```
 
 3. **Subir y Desplegar**:
@@ -22,23 +22,23 @@ Si ya tienes el sitio conectado a GitHub, cada vez que hagas cambios en Firebase
    git push origin main
    ```
 
-*Nota: Netlify detectará el push automáticamente y comenzará la construcción (Build). Tardará unos 2-3 minutos en reflejarse.*
+*Nota: Una vez que ejecutes el push, Netlify detectará el cambio automáticamente y actualizará tu sitio web en unos 2-3 minutos.*
 
-## 🛠️ 2. Configuración de Variables de Entorno
+## 🛠️ 2. Variables de Entorno en Netlify
 
-Asegúrate de tener estas variables en **Site settings > Environment variables** de Netlify para que Firebase funcione:
+Si ves que Firebase no carga en el sitio en vivo, asegúrate de configurar estas variables en **Site settings > Environment variables** de tu panel de Netlify:
 
-| Variable | Valor sugerido |
-|----------|-------------|
-| `NEXT_PUBLIC_FIREBASE_API_KEY` | Tu API Key |
+| Variable | Valor |
+|----------|-------|
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Tu API Key oficial |
 | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | agendacitas-nacional |
 | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | agendacitas-nacional.firebaseapp.com |
 
-## 📦 3. Solución a errores de subida
-Si el `git push` falla o se queda pegado:
-1. Revisa que no estés subiendo la carpeta `node_modules` (el archivo `.gitignore` ya se encarga de esto).
-2. Si es necesario, fuerza la subida: `git push origin main --force`.
+## 📦 3. Solución a errores de Build
+Si el despliegue en Netlify falla (aparece en rojo):
+1. Revisa los logs de Netlify.
+2. Asegúrate de que el comando de build sea: `npm run build`.
+3. Asegúrate de que la carpeta de publicación sea: `.next`.
 
-## 🌐 4. Configuración del Build
-- **Build Command**: `npm run build`
-- **Publish Directory**: `.next`
+## 🌐 4. Contacto de Soporte
+Para ajustes técnicos adicionales, contactar al administrador del sistema nacional.
