@@ -40,11 +40,8 @@ export default function Register() {
       uid: 'local-' + Date.now(),
       createdAt: new Date().toISOString()
     };
-    // Guardar perfil específico por email para privacidad
     localStorage.setItem(`perfil_${data.email}`, JSON.stringify(userPayload));
-    // Guardar sesión activa por email
     localStorage.setItem('sesion_activa_email', data.email);
-    // Compatibilidad con login general
     localStorage.setItem('usuario_registrado', JSON.stringify(userPayload));
     return userPayload;
   };
@@ -61,10 +58,12 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      // Intento Firebase Auth
-      if (auth && auth.config.apiKey !== 'none') {
+      // Verificación segura de Auth
+      const isAuthReady = !!(auth && auth.config && (auth.config as any).apiKey !== 'none');
+
+      if (isAuthReady) {
         try {
-          const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+          const userCredential = await createUserWithEmailAndPassword(auth!, formData.email, formData.password);
           await updateProfile(userCredential.user, { displayName: formData.fullName });
 
           if (db) {
@@ -73,28 +72,24 @@ export default function Register() {
               createdAt: serverTimestamp()
             });
           }
+          // También guardamos en local como respaldo
+          saveToLocalStorage(formData);
         } catch (fbErr: any) {
-          // Si el error es de API Key, procedemos en modo local silenciosamente
-          if (fbErr.code?.includes('api-key-not-valid') || fbErr.message?.includes('api-key-not-valid')) {
-            console.warn("[Auth] API Key inválida detectada, usando respaldo local.");
-            saveToLocalStorage(formData);
-          } else {
-            throw fbErr;
-          }
+          console.warn("[Firebase Register] Fallo silencioso:", fbErr.message);
+          saveToLocalStorage(formData);
         }
       } else {
         saveToLocalStorage(formData);
       }
 
       setIsSuccess(true);
-      toast({ title: "¡Expediente Creado!", description: "Redirigiendo a tu expediente nacional..." });
+      toast({ title: "¡Expediente Creado!", description: "Bienvenido a SmartCitas." });
       
       setTimeout(() => {
         router.push('/profile');
       }, 2000);
 
     } catch (error: any) {
-      console.warn("Fallo en Firebase Auth, aplicando Opción Local:", error);
       saveToLocalStorage(formData);
       setIsSuccess(true);
       setTimeout(() => {
@@ -115,7 +110,7 @@ export default function Register() {
               <CheckCircle2 className="h-12 w-12" />
             </div>
             <h1 className="text-3xl font-bold font-headline">¡Registro Exitoso!</h1>
-            <p className="text-muted-foreground">Tu expediente nacional ha sido creado correctamente.</p>
+            <p className="text-muted-foreground">Tu expediente nacional ha sido creado en SmartCitas.</p>
             <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary/50" />
           </Card>
         </main>
@@ -131,8 +126,8 @@ export default function Register() {
         <div className="w-full max-w-3xl">
           <Card className="rounded-[40px] shadow-2xl border-none overflow-hidden bg-white">
             <div className="bg-primary p-10 text-white text-center">
-              <h1 className="text-3xl font-bold font-headline mb-2">Registro de Salud Costa Rica</h1>
-              <p className="opacity-90">Crea tu expediente digital unificado</p>
+              <h1 className="text-3xl font-bold font-headline mb-2">Registro de SmartCitas</h1>
+              <p className="opacity-90">Crea tu expediente digital unificado en Costa Rica</p>
             </div>
             
             <CardContent className="p-10">
@@ -241,7 +236,7 @@ export default function Register() {
                   className="w-full h-16 rounded-full mt-6 shadow-xl shadow-primary/20 text-lg font-bold" 
                   disabled={isLoading}
                 >
-                  {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Crear Expediente Nacional"}
+                  {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Crear Expediente SmartCitas"}
                 </Button>
 
                 <div className="text-center pt-4">

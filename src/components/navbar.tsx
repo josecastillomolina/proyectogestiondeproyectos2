@@ -9,10 +9,11 @@ import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
 export function Navbar() {
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const auth = useAuth();
   const router = useRouter();
   const [activeEmail, setActiveEmail] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState(false);
 
   useEffect(() => {
     const email = localStorage.getItem('sesion_activa_email');
@@ -20,13 +21,17 @@ export function Navbar() {
   }, [user]);
 
   const handleSignOut = async () => {
-    if (auth) await signOut(auth);
+    if (auth && auth.config && (auth.config as any).apiKey !== 'none') {
+      try {
+        await signOut(auth);
+      } catch (e) {}
+    }
     localStorage.removeItem('sesion_activa_email');
     setActiveEmail(null);
     router.push('/');
   };
 
-  const isLoggedIn = user || activeEmail;
+  const isLoggedIn = !!(user || activeEmail);
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -34,22 +39,19 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-2 group">
-              <img 
-                src="/SmartCitas_logo.png" 
-                alt="SmartCitas" 
-                style={{ height: '40px', width: 'auto' }}
-                onError={(e) => {
-                  // Fallback si la imagen no existe aún
-                  e.currentTarget.style.display = 'none';
-                  const parent = e.currentTarget.parentElement;
-                  if (parent) {
-                    const span = document.createElement('span');
-                    span.className = 'text-xl font-bold font-headline tracking-tight text-primary';
-                    span.innerText = 'SmartCitas';
-                    parent.appendChild(span);
-                  }
-                }}
-              />
+              {!logoError ? (
+                <img 
+                  src="/SmartCitas_logo.png" 
+                  alt="SmartCitas" 
+                  style={{ height: '40px', width: 'auto' }}
+                  onError={() => setLogoError(true)}
+                  className="animate-in fade-in duration-300"
+                />
+              ) : (
+                <span className="text-xl font-bold font-headline tracking-tight text-primary">
+                  Smart<span className="text-secondary">Citas</span>
+                </span>
+              )}
             </Link>
           </div>
           <div className="flex items-center space-x-4">

@@ -59,28 +59,37 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   });
 
   useEffect(() => {
-    // Si no hay auth real (apiKey == "none"), marcamos como listo de inmediato
-    if (!auth || auth.config.apiKey === 'none') { 
+    // Si no hay instancia de Auth válida, marcamos como listo de inmediato
+    if (!auth || !auth.config || (auth.config as any).apiKey === 'none') { 
       setUserAuthState({ user: null, isUserLoading: false, userError: null });
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      (firebaseUser) => { 
-        setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
-      },
-      (error) => { 
-        console.warn("FirebaseProvider: onAuthStateChanged error:", error);
-        setUserAuthState({ user: null, isUserLoading: false, userError: error });
-      }
-    );
-    return () => unsubscribe(); 
+    try {
+      const unsubscribe = onAuthStateChanged(
+        auth,
+        (firebaseUser) => { 
+          setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
+        },
+        (error) => { 
+          console.warn("FirebaseProvider: onAuthStateChanged error:", error);
+          setUserAuthState({ user: null, isUserLoading: false, userError: error });
+        }
+      );
+      return () => unsubscribe();
+    } catch (e) {
+      setUserAuthState({ user: null, isUserLoading: false, userError: null });
+    }
   }, [auth]); 
 
   const contextValue = useMemo((): FirebaseContextState => {
-    // Solo consideramos servicios disponibles si tienen un API Key real
-    const servicesAvailable = !!(firebaseApp && firestore && auth && auth.config.apiKey !== 'none');
+    const servicesAvailable = !!(
+      firebaseApp && 
+      firestore && 
+      auth && 
+      auth.config && 
+      (auth.config as any).apiKey !== 'none'
+    );
     return {
       areServicesAvailable: servicesAvailable,
       firebaseApp,
@@ -104,7 +113,7 @@ export const useFirebase = (): FirebaseServicesAndUser | null => {
   const context = useContext(FirebaseContext);
   if (context === undefined) return null;
   
-  if (!context.firebaseApp || !context.firestore || !context.auth || context.auth.config.apiKey === 'none') {
+  if (!context.firebaseApp || !context.firestore || !context.auth || (context.auth.config as any).apiKey === 'none') {
     return null;
   }
 
