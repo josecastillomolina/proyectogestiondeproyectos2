@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -11,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Calendar, MapPin, Stethoscope, Loader2, CheckCircle2, Hospital, User, Clock, AlertTriangle, Phone, Activity, FileText, AlertCircle } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Calendar, MapPin, Stethoscope, Loader2, CheckCircle2, Hospital, User, Clock, AlertTriangle, Phone, Activity, FileText, AlertCircle, Info } from 'lucide-react';
 import { useUser, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -108,6 +110,8 @@ export default function Appointments() {
   const [selectedReason, setSelectedReason] = useState<{ label: string, severity: 'high' | 'standard' } | null>(null);
   const [chronicDisease, setChronicDisease] = useState('Ninguna');
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
+  const [noneOfTheAbove, setNoneOfTheAbove] = useState(false);
+  const [customSymptom, setCustomSymptom] = useState('');
   const [hasAnalysis, setHasAnalysis] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [bookedAppointment, setBookedAppointment] = useState<any>(null);
@@ -126,11 +130,19 @@ export default function Appointments() {
 
   useEffect(() => {
     setSelectedSymptoms([]);
+    setNoneOfTheAbove(false);
+    setCustomSymptom('');
   }, [chronicDisease]);
 
   const priorityData = useMemo(() => {
     const ahora = new Date();
     const horaActual = ahora.getHours();
+    
+    // Si marcó ninguno de los anteriores y tiene síntoma personalizado
+    if (noneOfTheAbove && customSymptom.trim().length > 0) {
+      return { level: 'MODERADO', wait: '3 semanas', color: 'text-amber-600', bg: 'bg-amber-100' };
+    }
+
     const tieneSintomasCriticos = selectedSymptoms.some(s => CRITICAL_SYMPTOMS.includes(s));
     const count = selectedSymptoms.length;
 
@@ -166,7 +178,7 @@ export default function Appointments() {
     } else {
       return { level: 'BAJO RIESGO', wait: '1 mes', color: 'text-green-600', bg: 'bg-green-100' };
     }
-  }, [chronicDisease, selectedSymptoms]);
+  }, [chronicDisease, selectedSymptoms, noneOfTheAbove, customSymptom]);
 
   const getSuggestedDate = (priorityObj: any) => {
     if (priorityObj.level === 'URGENTE') {
@@ -180,9 +192,25 @@ export default function Appointments() {
   };
 
   const handleSymptomToggle = (symptom: string) => {
-    setSelectedSymptoms(prev => 
-      prev.includes(symptom) ? prev.filter(s => s !== symptom) : [...prev, symptom]
-    );
+    setSelectedSymptoms(prev => {
+      const isChecking = !prev.includes(symptom);
+      if (isChecking) {
+        setNoneOfTheAbove(false);
+        return [...prev, symptom];
+      } else {
+        return prev.filter(s => s !== symptom);
+      }
+    });
+  };
+
+  const handleNoneOfTheAboveToggle = () => {
+    setNoneOfTheAbove(prev => {
+      const isChecking = !prev;
+      if (isChecking) {
+        setSelectedSymptoms([]);
+      }
+      return isChecking;
+    });
   };
 
   const handleBooking = () => {
@@ -232,6 +260,8 @@ export default function Appointments() {
       reason: selectedReason.label,
       chronicDisease: chronicDisease,
       sintomasMarcados: selectedSymptoms,
+      noneOfTheAbove: noneOfTheAbove,
+      sintomaPersonalizado: customSymptom,
       priority: priorityData.level,
       wait: priorityData.wait,
       hasAnalysis: hasAnalysis,
@@ -383,7 +413,32 @@ export default function Appointments() {
                               </label>
                             </div>
                           ))}
+                          <div className="flex items-center space-x-3 p-3 rounded-xl bg-muted/20 border border-transparent hover:border-primary/20 transition-colors">
+                              <Checkbox 
+                                id="none-above" 
+                                checked={noneOfTheAbove}
+                                onCheckedChange={handleNoneOfTheAboveToggle}
+                              />
+                              <label htmlFor="none-above" className="text-xs font-medium leading-none cursor-pointer italic text-muted-foreground">
+                                Ninguna de las anteriores
+                              </label>
+                          </div>
                         </div>
+
+                        {noneOfTheAbove && (
+                          <div className="pt-4 space-y-3 animate-in fade-in duration-500">
+                            <Label className="text-xs font-bold uppercase text-muted-foreground">Describa su síntoma aquí...</Label>
+                            <Textarea 
+                              placeholder="Indique brevemente cómo se siente..."
+                              className="rounded-xl h-24 bg-muted/30 border-none resize-none"
+                              value={customSymptom}
+                              onChange={(e) => setCustomSymptom(e.target.value)}
+                            />
+                            <p className="text-[10px] text-primary flex items-center gap-2 font-medium">
+                              <Info className="h-3 w-3" /> ℹ️ Su caso será evaluado por el médico al momento de la consulta
+                            </p>
+                          </div>
+                        )}
                         
                         <div className="pt-4">
                            <Button 

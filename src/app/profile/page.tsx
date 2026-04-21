@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useMemo } from 'react';
@@ -132,6 +133,10 @@ export default function Profile() {
       hour: '2-digit', minute: '2-digit'
     });
 
+    const sintomasTexto = appointment.sintomasMarcados && appointment.sintomasMarcados.length > 0 
+      ? appointment.sintomasMarcados.join(', ')
+      : 'Ninguno marcado';
+
     printWindow.document.write(`
       <html>
         <head>
@@ -183,10 +188,14 @@ export default function Profile() {
               <div class="item"><div class="label">Condición Crónica</div>${appointment.chronicDisease || 'Ninguna'}</div>
               <div class="item"><div class="label">Laboratorios</div>${appointment.hasAnalysis ? 'Adjuntados' : 'No reportados'}</div>
             </div>
-            ${appointment.sintomasMarcados && appointment.sintomasMarcados.length > 0 ? `
+            <div class="item" style="margin-top: 10px;">
+                <div class="label">Síntomas Marcados</div>
+                <div style="font-size: 12px; color: #444;">${sintomasTexto}</div>
+            </div>
+            ${appointment.sintomaPersonalizado ? `
               <div class="item" style="margin-top: 10px;">
-                <div class="label">Síntomas Reportados</div>
-                <div style="font-size: 12px; color: #444;">${appointment.sintomasMarcados.join(', ')}</div>
+                <div class="label">Síntoma declarado (Personalizado)</div>
+                <div style="font-size: 12px; color: #2563eb; font-weight: bold;">${appointment.sintomaPersonalizado}</div>
               </div>
             ` : ''}
           </div>
@@ -349,7 +358,7 @@ export default function Profile() {
                             {cita.priority && (
                               <div className={cn("ml-auto text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-widest flex items-center gap-1", 
                                 cita.priority === 'URGENTE' ? 'bg-red-100 text-red-600' : 
-                                cita.priority === 'MODERADO' ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'
+                                cita.priority === 'MODERADO' ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-700'
                               )}>
                                 <Activity className="h-3 w-3" /> {cita.priority}
                               </div>
