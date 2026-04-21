@@ -54,8 +54,7 @@ const CRITICAL_SYMPTOMS = [
   "Pérdida de conciencia reciente",
   "Saturación de oxígeno < 90%",
   "Presión > 160/100 mmHg",
-  "Glucosa en ayunas > 200 mg/dL",
-  "Tos con sangre"
+  "Glucosa en ayunas > 200 mg/dL"
 ];
 
 const REASONS_BY_SPECIALTY: Record<string, { label: string, severity: 'high' | 'standard' }[]> = {
@@ -130,24 +129,51 @@ export default function Appointments() {
   }, [chronicDisease]);
 
   const priorityData = useMemo(() => {
-    if (chronicDisease === 'Ninguna') return { level: 'BAJO RIESGO', wait: '1 mes', color: 'text-green-600', bg: 'bg-green-100' };
-
-    const hasCritical = selectedSymptoms.some(s => CRITICAL_SYMPTOMS.includes(s));
+    const ahora = new Date();
+    const horaActual = ahora.getHours();
+    const tieneSintomasCriticos = selectedSymptoms.some(s => CRITICAL_SYMPTOMS.includes(s));
     const count = selectedSymptoms.length;
 
-    if (hasCritical || count >= 3) {
-      return { level: 'URGENTE', wait: '1 semana', color: 'text-red-600', bg: 'bg-red-100' };
-    } else if (count >= 1) {
+    if (chronicDisease !== 'Ninguna' && (tieneSintomasCriticos || count >= 3)) {
+      // Lógica de fecha urgente
+      let fechaAsignada = new Date(ahora);
+      let esHoy = false;
+      let horaAsignada = "08:00";
+
+      if (tieneSintomasCriticos && horaActual < 14) {
+        fechaAsignada = ahora;
+        esHoy = true;
+        // Asignación de hora mismo día
+        if (horaActual < 10) horaAsignada = "10:00 AM";
+        else horaAsignada = `${horaActual + 1}:00 PM`;
+      } else {
+        fechaAsignada.setDate(ahora.getDate() + 1);
+        esHoy = false;
+        horaAsignada = "08:00 AM";
+      }
+
+      return { 
+        level: 'URGENTE', 
+        wait: esHoy ? 'HOY' : 'MAÑANA', 
+        color: 'text-red-600', 
+        bg: 'bg-red-100',
+        fechaAsignada,
+        horaAsignada,
+        esHoy
+      };
+    } else if (chronicDisease !== 'Ninguna' && count >= 1) {
       return { level: 'MODERADO', wait: '3 semanas', color: 'text-amber-600', bg: 'bg-amber-100' };
     } else {
       return { level: 'BAJO RIESGO', wait: '1 mes', color: 'text-green-600', bg: 'bg-green-100' };
     }
   }, [chronicDisease, selectedSymptoms]);
 
-  const getSuggestedDate = (level: string) => {
+  const getSuggestedDate = (priorityObj: any) => {
+    if (priorityObj.level === 'URGENTE') {
+      return priorityObj.fechaAsignada;
+    }
     const d = new Date();
-    if (level === 'URGENTE') d.setDate(d.getDate() + 7);
-    else if (level === 'MODERADO') d.setDate(d.getDate() + 21);
+    if (priorityObj.level === 'MODERADO') d.setDate(d.getDate() + 21);
     else d.setDate(d.getDate() + 30);
     d.setHours(9, 0, 0, 0);
     return d;
@@ -174,10 +200,15 @@ export default function Appointments() {
     }
 
     setIsBooking(true);
-    const appointmentDate = getSuggestedDate(priorityData.level);
+    const appointmentDate = getSuggestedDate(priorityData);
     const appointmentId = Date.now().toString();
     const voucherCode = `AC-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     const doctorName = DOCTORS[specialty]?.[0] || "Dr. General";
+    
+    // Hora automática para urgentes
+    const horaFinal = priorityData.level === 'URGENTE' ? 
+      priorityData.horaAsignada : 
+      appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     const newAppointment = {
       id: appointmentId,
@@ -194,6 +225,7 @@ export default function Appointments() {
       specialty: specialty,
       doctorName: doctorName,
       appointmentDateTime: appointmentDate.toISOString(),
+      horaAsignada: horaFinal,
       status: "Confirmada",
       voucherCode: voucherCode,
       createdAt: new Date().toISOString(),
@@ -202,7 +234,8 @@ export default function Appointments() {
       sintomasMarcados: selectedSymptoms,
       priority: priorityData.level,
       wait: priorityData.wait,
-      hasAnalysis: hasAnalysis
+      hasAnalysis: hasAnalysis,
+      asignadaAutomaticamente: priorityData.level === 'URGENTE'
     };
 
     // Guardar en Firestore si está disponible
@@ -238,7 +271,7 @@ export default function Appointments() {
                 <p className="flex items-center gap-2"><Hospital className="h-4 w-4 text-primary" /> {bookedAppointment.healthCenterName}</p>
                 <p className="flex items-center gap-2"><Stethoscope className="h-4 w-4 text-primary" /> {bookedAppointment.specialty}</p>
                 <p className="flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" /> {new Date(bookedAppointment.appointmentDateTime).toLocaleDateString()}</p>
-                <p className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /> {new Date(bookedAppointment.appointmentDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                <p className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /> {bookedAppointment.horaAsignada}</p>
                 <div className={cn("mt-4 p-3 rounded-xl flex items-center gap-2 font-bold text-xs uppercase tracking-wider", 
                   bookedAppointment.priority === 'URGENTE' ? 'bg-red-100 text-red-700' : 
                   bookedAppointment.priority === 'MODERADO' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
@@ -419,10 +452,20 @@ export default function Appointments() {
                       
                       <div>
                         <p className={cn("text-xs font-bold uppercase tracking-widest mb-1", priorityData.color)}>Prioridad {priorityData.level}</p>
-                        <p className="text-sm font-medium text-foreground/80">
-                          {priorityData.level === 'URGENTE' ? "⚠️ Cita disponible esta semana" : 
-                           priorityData.level === 'MODERADO' ? "⏰ Aproximadamente 3 semanas" : "✓ Disponible en 1 mes"}
+                        <p className="text-sm font-bold text-foreground/80 leading-relaxed">
+                          {priorityData.level === 'URGENTE' ? (
+                            priorityData.esHoy ? (
+                              <>🚨 Cita disponible HOY<br/><span className="text-[10px] font-medium">Preséntese lo antes posible</span></>
+                            ) : (
+                              <>⚠️ Cita para MAÑANA<br/><span className="text-[10px] font-medium">Llegue 15 minutos antes</span></>
+                            )
+                          ) : priorityData.level === 'MODERADO' ? "⏰ Aproximadamente 3 semanas" : "✓ Disponible en 1 mes"}
                         </p>
+                        {priorityData.level === 'URGENTE' && priorityData.fechaAsignada && (
+                          <p className={cn("text-[10px] font-bold mt-2", priorityData.color)}>
+                            FECHA ASIGNADA: {priorityData.fechaAsignada.toLocaleDateString('es-CR')} - {priorityData.horaAsignada}
+                          </p>
+                        )}
                       </div>
                    </div>
                    

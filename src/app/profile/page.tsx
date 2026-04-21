@@ -128,7 +128,7 @@ export default function Profile() {
     const fechaFormat = new Date(appointment.appointmentDateTime || appointment.fecha).toLocaleDateString('es-CR', {
       weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
     });
-    const horaFormat = new Date(appointment.appointmentDateTime || appointment.fecha).toLocaleTimeString('es-CR', {
+    const horaFormat = appointment.horaAsignada || new Date(appointment.appointmentDateTime || appointment.fecha).toLocaleTimeString('es-CR', {
       hour: '2-digit', minute: '2-digit'
     });
 
@@ -357,7 +357,7 @@ export default function Profile() {
                           </div>
                           <div className="flex gap-4 text-xs bg-muted/30 p-2 rounded-xl">
                             <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {new Date(cita.appointmentDateTime || cita.fecha).toLocaleDateString()}</span>
-                            <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {new Date(cita.appointmentDateTime || cita.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {cita.horaAsignada || new Date(cita.appointmentDateTime || cita.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                           </div>
                           <div className="flex items-center justify-between pt-2">
                             <span className="text-[10px] font-bold px-3 py-1 bg-green-100 text-green-700 rounded-full uppercase tracking-widest">{cita.status || cita.estado}</span>
