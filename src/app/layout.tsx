@@ -4,8 +4,8 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'AgendaCitas Nacional CR - Portal Oficial de Salud',
-  description: 'Sistema nacional unificado para el agendamiento de citas médicas en la red de salud de Costa Rica.',
+  title: 'SmartCitas',
+  description: 'Agenda tus citas médicas en Costa Rica',
 };
 
 export default function RootLayout({

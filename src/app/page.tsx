@@ -37,7 +37,7 @@ export default function Home() {
                 Red Nacional de Salud, <span className="text-primary underline decoration-secondary/30">Siempre Contigo</span>
               </h1>
               <p className="text-xl text-muted-foreground leading-relaxed">
-                Agenda tus citas médicas en hospitales y EBAIS de todo el país de forma rápida y segura a través de nuestro portal nacional unificado.
+                Agenda tus citas médicas en hospitales y EBAIS de todo el país de forma rápida y segura a través de SmartCitas.
               </p>
               <div className="flex flex-wrap gap-4 pt-4">
                 <Button size="lg" className="rounded-full bg-primary hover:bg-primary/90 px-8 py-6 text-lg" asChild>
@@ -57,7 +57,7 @@ export default function Home() {
         <section className="py-20 bg-accent/5">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16 space-y-4">
-              <h2 className="text-3xl font-bold font-headline text-foreground">Gestión de Salud CR</h2>
+              <h2 className="text-3xl font-bold font-headline text-foreground">Gestión de Salud con SmartCitas</h2>
               <p className="text-muted-foreground max-w-xl mx-auto">Servicios digitales integrados para la atención médica nacional.</p>
             </div>
             
@@ -92,7 +92,7 @@ export default function Home() {
           <div className="container mx-auto px-4">
             <div className="flex flex-col lg:flex-row items-center gap-16">
               <div className="lg:w-1/2 space-y-8">
-                <h2 className="text-4xl font-bold font-headline leading-tight">Garantía <span className="text-primary">AgendaCitas Nacional CR</span></h2>
+                <h2 className="text-4xl font-bold font-headline leading-tight">Garantía <span className="text-primary">SmartCitas</span></h2>
                 <div className="space-y-6">
                   {[
                     { icon: ShieldCheck, title: 'Datos Protegidos', desc: 'Seguridad de grado bancario para tu información médica personal.' },

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -264,7 +263,7 @@ export default function Appointments() {
       <main className="flex-grow bg-accent/5 py-16">
         <div className="container mx-auto px-4 max-w-5xl">
           <div className="text-center space-y-4 mb-12">
-            <h1 className="text-4xl font-extrabold font-headline">Agendamiento de Citas CR</h1>
+            <h1 className="text-4xl font-extrabold font-headline">Agendamiento de Citas en SmartCitas</h1>
             <p className="text-lg text-muted-foreground">Sistema de priorización automática por enfermedades crónicas.</p>
           </div>
 
@@ -368,7 +367,7 @@ export default function Appointments() {
                   </div>
 
                   <Button className="w-full h-16 rounded-full text-lg shadow-xl shadow-primary/20 font-bold" onClick={handleBooking} disabled={isBooking || !province || !specialty || !selectedReason || !selectedCenter}>
-                    {isBooking ? <Loader2 className="animate-spin" /> : "Confirmar Cita Nacional"}
+                    {isBooking ? <Loader2 className="animate-spin" /> : "Confirmar Cita en SmartCitas"}
                   </Button>
                 </CardContent>
               </Card>

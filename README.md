@@ -1,5 +1,4 @@
-
-# AgendaCitas Nacional CR - Guía de Gestión y Despliegue
+# SmartCitas - Guía de Gestión y Despliegue
 
 Este es el portal oficial para la gestión de citas médicas en Costa Rica.
 
@@ -14,7 +13,7 @@ Cada vez que termines de hacer cambios aquí en Firebase Studio, sigue estos pas
 
 2. **Crear etiqueta de avance**:
    ```bash
-   git commit -m "✨ Mejora: Sistema de citas y perfiles médicos"
+   git commit -m "✨ Mejora: Sistema de citas y perfiles médicos en SmartCitas"
    ```
 
 3. **Subir y Desplegar**:

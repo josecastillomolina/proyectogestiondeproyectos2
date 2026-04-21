@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Stethoscope, User, LogIn, MapPin, LogOut } from 'lucide-react';
+import { User, LogIn, MapPin, LogOut } from 'lucide-react';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -34,10 +34,22 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="bg-primary p-2 rounded-lg text-primary-foreground group-hover:rotate-12 transition-transform">
-                <Stethoscope className="h-6 w-6" />
-              </div>
-              <span className="text-xl font-bold font-headline tracking-tight text-primary">AgendaCitas Nacional CR</span>
+              <img 
+                src="/SmartCitas_logo.png" 
+                alt="SmartCitas" 
+                style={{ height: '40px', width: 'auto' }}
+                onError={(e) => {
+                  // Fallback si la imagen no existe aún
+                  e.currentTarget.style.display = 'none';
+                  const parent = e.currentTarget.parentElement;
+                  if (parent) {
+                    const span = document.createElement('span');
+                    span.className = 'text-xl font-bold font-headline tracking-tight text-primary';
+                    span.innerText = 'SmartCitas';
+                    parent.appendChild(span);
+                  }
+                }}
+              />
             </Link>
           </div>
           <div className="flex items-center space-x-4">

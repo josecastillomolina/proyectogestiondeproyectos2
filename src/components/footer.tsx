@@ -7,7 +7,7 @@ export function Footer() {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
           <div className="space-y-4">
-            <h3 className="text-xl font-bold font-headline text-primary border-b-2 border-primary/20 pb-2 inline-block">Portal Nacional</h3>
+            <h3 className="text-xl font-bold font-headline text-primary border-b-2 border-primary/20 pb-2 inline-block">SmartCitas</h3>
             <p className="text-muted-foreground leading-relaxed">
               Sistema unificado de gestión de salud para la Red Nacional de Costa Rica. Facilitamos el acceso ágil y seguro a servicios médicos de alta calidad en todo el territorio nacional.
             </p>
@@ -25,7 +25,7 @@ export function Footer() {
                 <Phone className="h-5 w-5 text-secondary" /> +506 60285415
               </li>
               <li className="flex items-center gap-3 text-muted-foreground">
-                <Mail className="h-5 w-5 text-secondary" /> consultas@agendacitascr.com
+                <Mail className="h-5 w-5 text-secondary" /> consultas@smartcitas.com
               </li>
               <li className="flex items-center gap-3 text-muted-foreground">
                 <MapPin className="h-5 w-5 text-secondary" /> San José, Costa Rica. Distrito Médico.
@@ -50,7 +50,7 @@ export function Footer() {
             </Link>
           </div>
           <div className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} AgendaCitas Nacional CR. Portal de Salud de Costa Rica.
+            © {new Date().getFullYear()} SmartCitas. Portal de Salud de Costa Rica.
           </div>
         </div>
       </div>

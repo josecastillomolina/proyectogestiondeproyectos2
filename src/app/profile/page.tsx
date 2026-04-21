@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useMemo } from 'react';
@@ -136,7 +135,7 @@ export default function Profile() {
     printWindow.document.write(`
       <html>
         <head>
-          <title>Comprobante de Cita - AgendaCitas CR</title>
+          <title>Comprobante de Cita - SmartCitas</title>
           <style>
             body { font-family: sans-serif; padding: 40px; color: #333; line-height: 1.5; }
             .header { border-bottom: 2px solid #2563eb; padding-bottom: 20px; text-align: center; }
@@ -159,7 +158,7 @@ export default function Profile() {
         </head>
         <body>
           <div class="header">
-            <h1 style="margin:0; color:#2563eb;">AgendaCitas Nacional CR</h1>
+            <h1 style="margin:0; color:#2563eb;">SmartCitas</h1>
             <p style="margin:5px 0 0;">Portal Oficial de Salud de Costa Rica</p>
           </div>
           <div class="confirmation">
@@ -325,7 +324,7 @@ export default function Profile() {
 
               <div className="space-y-4">
                 <h3 className="text-2xl font-bold font-headline flex items-center gap-2">
-                  <Calendar className="h-6 w-6 text-primary" /> Historial de Citas Nacionales
+                  <Calendar className="h-6 w-6 text-primary" /> Historial de Citas en SmartCitas
                 </h3>
                 {appointments.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
