@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useMemo } from 'react';
@@ -12,13 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { 
   User, LogOut, Loader2, Mail, CreditCard, ShieldCheck, 
-  Phone, Calendar, Printer, Hospital, Stethoscope, Clock, Edit3, Save, MapPin
+  Phone, Calendar, Printer, Hospital, Stethoscope, Clock, Edit3, Save, MapPin, Activity, AlertCircle
 } from 'lucide-react';
 import { useUser, useDoc } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/firebase/config';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -136,7 +138,7 @@ export default function Profile() {
         <head>
           <title>Comprobante de Cita - AgendaCitas CR</title>
           <style>
-            body { font-family: sans-serif; padding: 40px; color: #333; }
+            body { font-family: sans-serif; padding: 40px; color: #333; line-height: 1.5; }
             .header { border-bottom: 2px solid #2563eb; padding-bottom: 20px; text-align: center; }
             .confirmation { background: #f1f5f9; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center; border: 1px solid #e2e8f0; }
             .code { font-family: monospace; font-size: 24px; font-weight: bold; color: #2563eb; }
@@ -144,7 +146,11 @@ export default function Profile() {
             .section-title { font-weight: bold; font-size: 14px; text-transform: uppercase; color: #64748b; border-bottom: 1px solid #e2e8f0; margin-bottom: 10px; }
             .grid { display: grid; grid-template-cols: 1fr 1fr; gap: 10px; }
             .item { font-size: 14px; margin-bottom: 8px; }
-            .label { color: #64748b; font-size: 12px; }
+            .label { color: #64748b; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+            .priority-tag { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; margin-top: 5px; }
+            .priority-URGENTE { background: #fee2e2; color: #dc2626; }
+            .priority-MODERADO { background: #fef3c7; color: #d97706; }
+            .priority-BAJO_RIESGO { background: #dcfce7; color: #16a34a; }
             @media print {
               .no-print { display: none; }
               body { padding: 0; margin: 0; }
@@ -159,6 +165,9 @@ export default function Profile() {
           <div class="confirmation">
             <div class="label">NÚMERO DE CONFIRMACIÓN</div>
             <div class="code">${appointment.voucherCode || appointment.numeroConfirmacion}</div>
+            <div class="priority-tag priority-${(appointment.priority || 'BAJO_RIESGO').replace(' ', '_')}">
+              Prioridad ${appointment.priority || 'Normal'} — Tiempo estimado: ${appointment.wait || '1 mes'}
+            </div>
           </div>
           <div class="section">
             <div class="section-title">Datos del Paciente</div>
@@ -168,6 +177,19 @@ export default function Profile() {
               <div class="item"><div class="label">Teléfono</div>${formData.phoneNumber}</div>
               <div class="item"><div class="label">Sangre</div>${formData.bloodType || 'N/A'}</div>
             </div>
+          </div>
+          <div class="section">
+            <div class="section-title">Declaración de Salud</div>
+            <div class="grid">
+              <div class="item"><div class="label">Condición Crónica</div>${appointment.chronicDisease || 'Ninguna'}</div>
+              <div class="item"><div class="label">Laboratorios</div>${appointment.hasAnalysis ? 'Adjuntados' : 'No reportados'}</div>
+            </div>
+            ${appointment.sintomasMarcados && appointment.sintomasMarcados.length > 0 ? `
+              <div class="item" style="margin-top: 10px;">
+                <div class="label">Síntomas Reportados</div>
+                <div style="font-size: 12px; color: #444;">${appointment.sintomasMarcados.join(', ')}</div>
+              </div>
+            ` : ''}
           </div>
           <div class="section">
             <div class="section-title">Detalles de la Cita</div>
@@ -308,7 +330,7 @@ export default function Profile() {
                 {appointments.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {appointments.map((cita) => (
-                      <Card key={cita.id} className="rounded-3xl border-none shadow-md bg-white overflow-hidden">
+                      <Card key={cita.id} className="rounded-3xl border-none shadow-md bg-white overflow-hidden group">
                         <div className="p-6 space-y-4">
                           <div className="flex justify-between items-start">
                             <div className="bg-primary/10 p-2 rounded-lg">
@@ -323,7 +345,17 @@ export default function Profile() {
                             <h4 className="font-bold text-lg leading-tight">{cita.centroSalud?.nombre || cita.healthCenterName || cita.hospital}</h4>
                             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><MapPin className="h-3 w-3" /> {cita.centroSalud?.direccion || 'Sede Regional'}</p>
                           </div>
-                          <p className="text-sm font-medium flex items-center gap-2"><Stethoscope className="h-4 w-4 text-primary" /> {cita.specialty || cita.especialidad}</p>
+                          <div className="flex flex-wrap gap-2">
+                            <p className="text-sm font-medium flex items-center gap-2"><Stethoscope className="h-4 w-4 text-primary" /> {cita.specialty || cita.especialidad}</p>
+                            {cita.priority && (
+                              <div className={cn("ml-auto text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-widest flex items-center gap-1", 
+                                cita.priority === 'URGENTE' ? 'bg-red-100 text-red-600' : 
+                                cita.priority === 'MODERADO' ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'
+                              )}>
+                                <Activity className="h-3 w-3" /> {cita.priority}
+                              </div>
+                            )}
+                          </div>
                           <div className="flex gap-4 text-xs bg-muted/30 p-2 rounded-xl">
                             <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {new Date(cita.appointmentDateTime || cita.fecha).toLocaleDateString()}</span>
                             <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {new Date(cita.appointmentDateTime || cita.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
