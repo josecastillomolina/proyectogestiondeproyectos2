@@ -39,9 +39,27 @@ export function Navbar() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
-            <Link href="/" className="flex items-center gap-2 group">
+            <Link 
+              href="/" 
+              className="flex items-center gap-2 group transition-all duration-300 ease-in-out cursor-pointer inline-block hover:-translate-y-0.5 hover:scale-105 active:scale-100 active:translate-y-0"
+              onMouseEnter={(e) => {
+                const imgContainer = e.currentTarget.querySelector('.logo-container') as HTMLElement;
+                if (imgContainer) {
+                  imgContainer.style.filter = 'brightness(1.15) drop-shadow(0 4px 12px rgba(59, 130, 246, 0.4))';
+                }
+              }}
+              onMouseLeave={(e) => {
+                const imgContainer = e.currentTarget.querySelector('.logo-container') as HTMLElement;
+                if (imgContainer) {
+                  imgContainer.style.filter = 'none';
+                }
+              }}
+            >
               {!logoError ? (
-                <div className="relative h-[45px] w-[180px]">
+                <div 
+                  className="relative h-[45px] w-[180px] logo-container transition-all duration-300 ease-in-out"
+                  style={{ transition: 'all 0.3s ease' }}
+                >
                   <Image 
                     src="/SmartCitas_logo.png" 
                     alt="SmartCitas" 
@@ -52,7 +70,7 @@ export function Navbar() {
                   />
                 </div>
               ) : (
-                <span className="text-xl font-bold font-headline tracking-tight text-primary flex items-center">
+                <span className="text-xl font-bold font-headline tracking-tight text-primary flex items-center transition-all duration-300 group-hover:brightness-110">
                   Smart<span className="text-secondary">Citas</span>
                 </span>
               )}
