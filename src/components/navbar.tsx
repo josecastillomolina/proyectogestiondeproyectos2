@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { User, LogIn, MapPin, LogOut } from 'lucide-react';
 import { useUser, useAuth } from '@/firebase';
@@ -40,13 +41,16 @@ export function Navbar() {
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-2 group">
               {!logoError ? (
-                <img 
-                  src="/SmartCitas_logo.png" 
-                  alt="SmartCitas" 
-                  style={{ height: '45px', width: 'auto' }}
-                  onError={() => setLogoError(true)}
-                  className="animate-in fade-in duration-300"
-                />
+                <div className="relative h-[45px] w-[180px]">
+                  <Image 
+                    src="/SmartCitas_logo.png" 
+                    alt="SmartCitas" 
+                    fill
+                    className="object-contain animate-in fade-in duration-300"
+                    priority
+                    onError={() => setLogoError(true)}
+                  />
+                </div>
               ) : (
                 <span className="text-xl font-bold font-headline tracking-tight text-primary flex items-center">
                   Smart<span className="text-secondary">Citas</span>
