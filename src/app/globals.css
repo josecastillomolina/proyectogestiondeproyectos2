@@ -10,10 +10,12 @@
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 221 83% 53%;
+    /* Azul del logo SmartCitas */
+    --primary: 202 100% 38%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 199 89% 48%;
-    --secondary-foreground: 222 47% 11%;
+    /* Verde del logo SmartCitas */
+    --secondary: 94 65% 45%;
+    --secondary-foreground: 0 0% 100%;
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
     --accent: 210 40% 96%;
@@ -22,7 +24,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 221 83% 53%;
+    --ring: 202 100% 38%;
     --radius: 0.75rem;
   }
   .dark {
@@ -32,10 +34,10 @@
     --card-foreground: 210 40% 98%;
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
+    --primary: 202 100% 45%;
     --primary-foreground: 222 47% 11%;
-    --secondary: 217 19% 27%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 94 65% 50%;
+    --secondary-foreground: 222 47% 11%;
     --muted: 217 19% 27%;
     --muted-foreground: 215 20% 65%;
     --accent: 217 19% 27%;
@@ -44,7 +46,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217 19% 27%;
     --input: 217 19% 27%;
-    --ring: 224 76% 48%;
+    --ring: 202 100% 45%;
   }
 }
 

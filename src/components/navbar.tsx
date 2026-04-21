@@ -43,12 +43,12 @@ export function Navbar() {
                 <img 
                   src="/SmartCitas_logo.png" 
                   alt="SmartCitas" 
-                  style={{ height: '40px', width: 'auto' }}
+                  style={{ height: '45px', width: 'auto' }}
                   onError={() => setLogoError(true)}
                   className="animate-in fade-in duration-300"
                 />
               ) : (
-                <span className="text-xl font-bold font-headline tracking-tight text-primary">
+                <span className="text-xl font-bold font-headline tracking-tight text-primary flex items-center">
                   Smart<span className="text-secondary">Citas</span>
                 </span>
               )}
